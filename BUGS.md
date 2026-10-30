@@ -15,7 +15,13 @@ These become the "what was hardest" answers in a viva or interview.
 
 | # | What broke | Cause | Fix |
 |---|---|---|---|
-| 6 |  |  |  |
+| 6 | Owner taps "Mark as issued" while borrower taps "Cancel": loan ends CANCELLED, item AVAILABLE, but the item is physically in the slot. A double-tap also saved two handover photos | Every step after Reserve read the status, then wrote it in a separate query. Same check-then-act race that Reserve already avoided | All steps go through one `transition()` helper: `updateMany` with the expected status in the WHERE, plus the item update and photo, in one transaction. Loser gets a clean error |
+| 7 | Reserve could leave an item RESERVED with no loan if the server died between the two writes | Item claim and loan insert were separate statements, with a manual undo in `catch` | Both run in one interactive transaction |
+| 8 | Two students listing at once could get the same CS-xxxx code and one would crash | Code picked by "look up, then insert" | Insert directly and retry on Postgres unique violation (P2002) |
+| 9 | Deleting an item at the moment someone reserved it silently wiped their loan (cascade) | Check status, then delete | Single `deleteMany` where status is AVAILABLE and owner is me |
+| 10 | Signed-out visitors could open "Lend an item", fill it all in, then get "Please sign in" | `auth` as proxy only redirects if an `authorized` callback exists | Added `authorized` callback, plus a redirect in the page itself |
+| 11 | After signing in from a scanned QR, the student landed on Browse, not the item | Sign-in page ignored `callbackUrl` | Sign-in honours `callbackUrl`, restricted to paths on this site |
+| 12 | Server accepted any loan length, category, slot, or "photo" string from a crafted request | Only the browser form validated input | Server checks all fields; photos must be JPEG/PNG/WebP data URLs under ~500 KB |
 
 ---
 

@@ -10,7 +10,7 @@
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "node --experimental-strip-types prisma/seed.ts"
+    "db:seed": "node prisma/seed.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.4",

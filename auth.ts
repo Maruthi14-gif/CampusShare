@@ -29,7 +29,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ profile }) {
       const email = profile?.email?.toLowerCase()
       if (!email) return false
+      // Google sends email_verified; an unverified address proves nothing.
+      if (profile?.email_verified === false) return false
       return email.endsWith(`@${ALLOWED_DOMAIN}`)
+    },
+
+    // Used by proxy.ts. Without this callback, the proxy only reads the
+    // session and lets everyone through — /items/new was open to
+    // signed-out visitors. Returning false sends them to /signin.
+    authorized({ auth }) {
+      return !!auth?.user
     },
 
     async jwt({ token, user }) {

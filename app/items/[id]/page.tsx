@@ -95,7 +95,8 @@ export default async function ItemPage({
               )}
               <p className="text-sm text-slate-500">
                 Lent by {item.owner.name ?? "a student"}
-                {item.owner.rollNo && ` · ${item.owner.rollNo}`}
+                {/* Roll numbers are for campus eyes only, not the open web */}
+                {session?.user && item.owner.rollNo && ` · ${item.owner.rollNo}`}
               </p>
             </div>
           </Card>
@@ -142,7 +143,7 @@ export default async function ItemPage({
                   Sign in with your institute account to borrow this.
                 </p>
                 <Link
-                  href="/signin"
+                  href={`/signin?callbackUrl=${encodeURIComponent(`/items/${item.id}`)}`}
                   className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-indigo-600 text-sm font-medium text-white"
                 >
                   Sign in
@@ -171,12 +172,14 @@ export default async function ItemPage({
                       <StatusBadge status={loan.status} />
                     </dd>
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-slate-500">Borrower</dt>
-                    <dd className="font-medium">
-                      {loan.borrower.name ?? loan.borrower.rollNo}
-                    </dd>
-                  </div>
+                  {session?.user && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-slate-500">Borrower</dt>
+                      <dd className="font-medium">
+                        {loan.borrower.name ?? loan.borrower.rollNo}
+                      </dd>
+                    </div>
+                  )}
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Due</dt>
                     <dd className="font-medium">{formatDate(loan.dueAt)}</dd>

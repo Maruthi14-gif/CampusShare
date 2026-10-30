@@ -5,22 +5,30 @@
 //
 //    AVAILABLE → RESERVED → ISSUED → COLLECTED → RETURNED → VERIFIED → AVAILABLE
 //
-//  Two rules that every function below obeys:
+//  Three rules that every function below obeys:
 //    1. Check WHO is acting (owner vs borrower) — never trust the UI.
 //    2. Check the CURRENT status before moving to the next one.
-//  Enforce both on the server. The UI will never send an illegal
+//    3. Do that status check INSIDE the write, never as a separate read.
+//  Enforce all three on the server. The UI will never send an illegal
 //  request, but an attacker with curl absolutely will.
 // ─────────────────────────────────────────────────────────────
 
 "use server"
 
 import { revalidatePath } from "next/cache"
+import type { ItemStatus, LoanStatus, Prisma } from "@prisma/client"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { isValidPhoto } from "@/lib/utils"
 
-type Result<T = {}> = ({ ok: true } & T) | { ok: false; error: string }
+type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
 const DEFAULT_LOAN_DAYS = 3
+const MAX_LOAN_DAYS = 14
+const MAX_NOTES = 300
+
+// Neon can take a few seconds to wake from idle; give transactions room.
+const TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 }
 
 function fourDigitCode() {
   return String(Math.floor(1000 + Math.random() * 9000))
@@ -31,6 +39,72 @@ function refreshViews(itemId?: string) {
   revalidatePath("/dashboard")
   if (itemId) revalidatePath(`/items/${itemId}`)
 }
+
+/** Thrown inside a transaction when another request changed the row first. */
+class LostRace extends Error {}
+
+// ═══════════════════════════════════════════════════════════════
+//  The one place a loan changes state.
+//
+//  THE SECOND RACE CONDITION FIX
+//
+//  The old version of every step below did:
+//      const loan = await prisma.loan.findUnique(...)
+//      if (loan.status === "RESERVED") { await prisma.loan.update(...) }
+//
+//  Same bug as reserving: the owner taps "Mark as issued" while the
+//  borrower taps "Cancel". Both read RESERVED, both write. The loan
+//  ends up CANCELLED, the item AVAILABLE, and the calculator is
+//  physically sitting in someone's slot. A double-tap also wrote two
+//  condition photos for one handover.
+//
+//  The fix is the same idea as reserveItem: the status check goes into
+//  the WHERE of the write (`updateMany` where status is what we expect).
+//  Exactly one request gets count === 1. The item update and the photo
+//  are in the same transaction, so they only happen for the winner.
+// ═══════════════════════════════════════════════════════════════
+
+async function transition(opts: {
+  loanId: string
+  itemId: string
+  from: LoanStatus[]
+  data: Prisma.LoanUpdateManyMutationInput
+  itemStatus?: ItemStatus
+  log?: { phase: "ISSUE" | "RETURN"; photoUrl: string; notes?: string }
+}): Promise<boolean> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const moved = await tx.loan.updateMany({
+        where: { id: opts.loanId, status: { in: opts.from } },
+        data: opts.data,
+      })
+      if (moved.count !== 1) throw new LostRace()
+
+      if (opts.itemStatus) {
+        await tx.item.update({
+          where: { id: opts.itemId },
+          data: { status: opts.itemStatus },
+        })
+      }
+      if (opts.log) {
+        await tx.conditionLog.create({
+          data: {
+            loanId: opts.loanId,
+            phase: opts.log.phase,
+            photoUrl: opts.log.photoUrl,
+            notes: opts.log.notes?.trim().slice(0, MAX_NOTES) || null,
+          },
+        })
+      }
+    }, TX_OPTIONS)
+    return true
+  } catch (e) {
+    if (e instanceof LostRace) return false
+    throw e
+  }
+}
+
+const CHANGED = "This loan was just updated by someone else. Refresh the page."
 
 // ═══════════════════════════════════════════════════════════════
 //  1. RESERVE  —  read section 6 of the plan before touching this
@@ -44,9 +118,13 @@ export async function reserveItem(
   if (!session?.user?.id) return { ok: false, error: "Please sign in first." }
   const userId = session.user.id
 
+  // `days` arrives from the browser, so anyone can send 9999 or "abc".
+  if (!Number.isInteger(days) || days < 1 || days > MAX_LOAN_DAYS)
+    return { ok: false, error: `Loans can be 1 to ${MAX_LOAN_DAYS} days.` }
+
   const item = await prisma.item.findUnique({
     where: { id: itemId },
-    select: { ownerId: true, slot: true },
+    select: { ownerId: true },
   })
   if (!item) return { ok: false, error: "Item not found." }
   if (item.ownerId === userId) return { ok: false, error: "You can't borrow your own item." }
@@ -65,41 +143,46 @@ export async function reserveItem(
   //  The fix: put the condition INSIDE the write. `updateMany` with
   //  `where: { status: "AVAILABLE" }` is a single SQL statement, so
   //  Postgres serialises it. Exactly one caller gets count === 1.
+  //
+  //  Claiming the item and creating the loan share one transaction,
+  //  so the item can never be left RESERVED with no loan attached.
   // ─────────────────────────────────────────────────────────────
-  const claimed = await prisma.item.updateMany({
-    where: { id: itemId, status: "AVAILABLE" },
-    data: { status: "RESERVED" },
-  })
-
-  if (claimed.count === 0) {
-    return { ok: false, error: "Someone just reserved this item. Try another one." }
-  }
-
-  // Only the winner reaches this line.
   const dueAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
 
   try {
-    const loan = await prisma.loan.create({
-      data: {
-        itemId,
-        borrowerId: userId,
-        status: "RESERVED",
-        pickupCode: fourDigitCode(),
-        slot: item.slot,
-        dueAt,
-      },
-      select: { id: true, pickupCode: true, dueAt: true },
-    })
+    const loan = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.item.updateMany({
+        where: { id: itemId, status: "AVAILABLE" },
+        data: { status: "RESERVED" },
+      })
+      if (claimed.count === 0) throw new LostRace()
+
+      // Read the slot after claiming, so a slot change made a moment
+      // ago is the one the borrower is told about.
+      const current = await tx.item.findUniqueOrThrow({
+        where: { id: itemId },
+        select: { slot: true },
+      })
+
+      return tx.loan.create({
+        data: {
+          itemId,
+          borrowerId: userId,
+          status: "RESERVED",
+          pickupCode: fourDigitCode(),
+          slot: current.slot,
+          dueAt,
+        },
+        select: { id: true, pickupCode: true, dueAt: true },
+      })
+    }, TX_OPTIONS)
 
     refreshViews(itemId)
     return { ok: true, loanId: loan.id, pickupCode: loan.pickupCode, dueAt: loan.dueAt }
   } catch (e) {
-    // If creating the loan fails, put the item back — never leave it
-    // stranded in RESERVED with no loan attached to it.
-    await prisma.item.updateMany({
-      where: { id: itemId, status: "RESERVED" },
-      data: { status: "AVAILABLE" },
-    })
+    if (e instanceof LostRace)
+      return { ok: false, error: "Someone just reserved this item. Try another one." }
+    console.error("reserveItem failed", e)
     return { ok: false, error: "Could not create the reservation. Please try again." }
   }
 }
@@ -125,18 +208,18 @@ export async function markIssued(
     return { ok: false, error: "Only the owner can issue this item." }
   if (loan.status !== "RESERVED")
     return { ok: false, error: `This loan is already ${loan.status.toLowerCase()}.` }
-  if (!photoUrl) return { ok: false, error: "A condition photo is required when issuing." }
+  if (!isValidPhoto(photoUrl))
+    return { ok: false, error: "A condition photo is required when issuing." }
 
-  await prisma.$transaction([
-    prisma.loan.update({
-      where: { id: loanId },
-      data: { status: "ISSUED", issuedAt: new Date() },
-    }),
-    prisma.item.update({ where: { id: loan.itemId }, data: { status: "ISSUED" } }),
-    prisma.conditionLog.create({
-      data: { loanId, phase: "ISSUE", photoUrl, notes: notes?.trim() || null },
-    }),
-  ])
+  const done = await transition({
+    loanId,
+    itemId: loan.itemId,
+    from: ["RESERVED"],
+    data: { status: "ISSUED", issuedAt: new Date() },
+    itemStatus: "ISSUED",
+    log: { phase: "ISSUE", photoUrl, notes },
+  })
+  if (!done) return { ok: false, error: CHANGED }
 
   refreshViews(loan.itemId)
   return { ok: true }
@@ -160,10 +243,13 @@ export async function markCollected(loanId: string): Promise<Result> {
   if (loan.status !== "ISSUED")
     return { ok: false, error: "This item hasn't been issued yet." }
 
-  await prisma.loan.update({
-    where: { id: loanId },
+  const done = await transition({
+    loanId,
+    itemId: loan.itemId,
+    from: ["ISSUED"],
     data: { status: "COLLECTED", collectedAt: new Date() },
   })
+  if (!done) return { ok: false, error: CHANGED }
 
   refreshViews(loan.itemId)
   return { ok: true }
@@ -190,19 +276,19 @@ export async function markReturned(
     return { ok: false, error: "Only the borrower can return this item." }
   if (loan.status !== "COLLECTED" && loan.status !== "ISSUED")
     return { ok: false, error: "This loan isn't in a state that can be returned." }
-  if (!photoUrl) return { ok: false, error: "A condition photo is required when returning." }
+  if (!isValidPhoto(photoUrl))
+    return { ok: false, error: "A condition photo is required when returning." }
 
-  await prisma.$transaction([
-    prisma.loan.update({
-      where: { id: loanId },
-      data: { status: "RETURNED", returnedAt: new Date() },
-    }),
+  const done = await transition({
+    loanId,
+    itemId: loan.itemId,
+    from: ["COLLECTED", "ISSUED"],
+    data: { status: "RETURNED", returnedAt: new Date() },
     // Not AVAILABLE yet — the owner still has to look at the photos.
-    prisma.item.update({ where: { id: loan.itemId }, data: { status: "AWAITING_CHECK" } }),
-    prisma.conditionLog.create({
-      data: { loanId, phase: "RETURN", photoUrl, notes: notes?.trim() || null },
-    }),
-  ])
+    itemStatus: "AWAITING_CHECK",
+    log: { phase: "RETURN", photoUrl, notes },
+  })
+  if (!done) return { ok: false, error: CHANGED }
 
   refreshViews(loan.itemId)
   return { ok: true }
@@ -226,13 +312,14 @@ export async function markVerified(loanId: string): Promise<Result> {
   if (loan.status !== "RETURNED")
     return { ok: false, error: "This item hasn't been returned yet." }
 
-  await prisma.$transaction([
-    prisma.loan.update({
-      where: { id: loanId },
-      data: { status: "VERIFIED", verifiedAt: new Date() },
-    }),
-    prisma.item.update({ where: { id: loan.itemId }, data: { status: "AVAILABLE" } }),
-  ])
+  const done = await transition({
+    loanId,
+    itemId: loan.itemId,
+    from: ["RETURNED"],
+    data: { status: "VERIFIED", verifiedAt: new Date() },
+    itemStatus: "AVAILABLE",
+  })
+  if (!done) return { ok: false, error: CHANGED }
 
   refreshViews(loan.itemId)
   return { ok: true }
@@ -257,10 +344,16 @@ export async function cancelReservation(loanId: string): Promise<Result> {
   if (loan.status !== "RESERVED")
     return { ok: false, error: "Only a reservation that hasn't been issued can be cancelled." }
 
-  await prisma.$transaction([
-    prisma.loan.update({ where: { id: loanId }, data: { status: "CANCELLED" } }),
-    prisma.item.update({ where: { id: loan.itemId }, data: { status: "AVAILABLE" } }),
-  ])
+  // If the owner marks it issued at the same moment, only one of the two
+  // wins. Cancel can no longer undo a handover that already happened.
+  const done = await transition({
+    loanId,
+    itemId: loan.itemId,
+    from: ["RESERVED"],
+    data: { status: "CANCELLED" },
+    itemStatus: "AVAILABLE",
+  })
+  if (!done) return { ok: false, error: "It was issued before the cancel went through." }
 
   refreshViews(loan.itemId)
   return { ok: true }
