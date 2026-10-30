@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next"
-import { Bricolage_Grotesque } from "next/font/google"
+import { Bricolage_Grotesque, Geist } from "next/font/google"
 import "./globals.css"
 import { auth } from "@/auth"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "CampusShare — borrow what you need, lend what you don't",
@@ -33,7 +36,7 @@ export default async function RootLayout({
   const session = await auth()
 
   return (
-    <html lang="en" className={`h-full antialiased ${display.variable}`}>
+    <html lang="en" className={cn("h-full", "antialiased", display.variable, "font-sans", geist.variable)}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <Navbar
           user={

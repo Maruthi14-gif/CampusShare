@@ -3,7 +3,7 @@
 **Borrow what you need, lend what you don't.** A verified QR-based lending
 system for IIIT Dharwad — built for ₹121 as a Frugal Innovation course project.
 
-Live: _add your Vercel URL here_
+Live: https://campusshare-black.vercel.app/
 
 ---
 

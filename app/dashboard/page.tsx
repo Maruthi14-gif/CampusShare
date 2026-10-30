@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { formatDate, daysLeft } from "@/lib/utils"
 import { Badge, Card, Empty, StatusBadge } from "@/components/ui"
 import { ItemCard3D } from "@/components/ItemCard3D"
+import { findStockImage } from "@/lib/stockImage"
 
 export const dynamic = "force-dynamic"
 
@@ -35,6 +36,10 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "asc" },
     }),
   ])
+
+  const stock = await Promise.all(
+    myItems.map((i) => (i.imageUrl ? null : findStockImage(i.title, i.category)))
+  )
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
@@ -145,11 +150,10 @@ export default async function DashboardPage() {
               }
             />
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {myItems.map((item) => (
+            <div className="grid justify-items-center gap-x-6 lg:grid-cols-2">
+              {myItems.map((item, i) => (
                 <ItemCard3D
                   key={item.id}
-                  compact
                   item={{
                     id: item.id,
                     title: item.title,
@@ -159,7 +163,7 @@ export default async function DashboardPage() {
                     status: item.status,
                     imageUrl: item.imageUrl,
                     description: item.description,
-                    ownerName: null,
+                    stock: stock[i],
                   }}
                 />
               ))}

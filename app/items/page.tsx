@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { CATEGORIES } from "@/lib/utils"
 import { Empty, Input } from "@/components/ui"
 import { ItemCard3D } from "@/components/ItemCard3D"
+import { findStockImage } from "@/lib/stockImage"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +32,11 @@ export default async function ItemsPage({
     orderBy: { createdAt: "desc" },
     take: 60,
   })
+
+  // Items listed without a photo get a credited stand-in from Wikimedia Commons.
+  const stock = await Promise.all(
+    items.map((i) => (i.imageUrl ? null : findStockImage(i.title, i.category)))
+  )
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
@@ -97,8 +103,8 @@ export default async function ItemsPage({
             }
           />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
+          <div className="grid justify-items-center gap-x-6 lg:grid-cols-2">
+            {items.map((item, i) => (
               <ItemCard3D
                 key={item.id}
                 item={{
@@ -110,7 +116,7 @@ export default async function ItemsPage({
                   status: item.status,
                   imageUrl: item.imageUrl,
                   description: item.description,
-                  ownerName: item.owner.name ?? "A student",
+                  stock: stock[i],
                 }}
               />
             ))}

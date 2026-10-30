@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { itemQrDataUrl, baseUrl } from "@/lib/qr"
+import { findStockImage } from "@/lib/stockImage"
 import { formatDate } from "@/lib/utils"
 import { Badge, Card, StatusBadge } from "@/components/ui"
 import {
@@ -50,6 +51,7 @@ export default async function ItemPage({
   const loan = item.loans[0] ?? null
   const isBorrower = loan && me === loan.borrower.id
   const qr = await itemQrDataUrl(item.code, baseUrl())
+  const stock = item.imageUrl ? null : await findStockImage(item.title, item.category)
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
@@ -71,6 +73,18 @@ export default async function ItemPage({
               {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+              ) : stock ? (
+                <figure className="relative h-full w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={stock.url} alt={`Stock photo of a ${item.category.toLowerCase()}`} className="h-full w-full object-cover" />
+                  <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8 text-[11px] leading-snug text-white/90">
+                    <strong className="font-semibold text-white">Stock photo, not the actual item.</strong>{" "}
+                    Photo: {stock.author},{" "}
+                    <a href={stock.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                      {stock.license}, via Wikimedia Commons
+                    </a>
+                  </figcaption>
+                </figure>
               ) : (
                 <div className="grid h-full place-items-center text-sm text-slate-400">
                   no photo
