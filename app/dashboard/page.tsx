@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { formatDate, daysLeft } from "@/lib/utils"
 import { Badge, Card, Empty, StatusBadge } from "@/components/ui"
+import { ItemCard3D } from "@/components/ItemCard3D"
 
 export const dynamic = "force-dynamic"
 
@@ -144,20 +145,23 @@ export default async function DashboardPage() {
               }
             />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {myItems.map((item) => (
-                <Link key={item.id} href={`/items/${item.id}`}>
-                  <Card className="flex items-center gap-3 p-4 transition hover:shadow-md">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{item.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {item.code}
-                        {item.slot && ` · slot ${item.slot}`}
-                      </p>
-                    </div>
-                    <StatusBadge status={item.status} />
-                  </Card>
-                </Link>
+                <ItemCard3D
+                  key={item.id}
+                  compact
+                  item={{
+                    id: item.id,
+                    title: item.title,
+                    category: item.category,
+                    code: item.code,
+                    slot: item.slot,
+                    status: item.status,
+                    imageUrl: item.imageUrl,
+                    description: item.description,
+                    ownerName: null,
+                  }}
+                />
               ))}
             </div>
           )}

@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { CATEGORIES } from "@/lib/utils"
-import { Badge, Card, Empty, Input, StatusBadge } from "@/components/ui"
+import { Empty, Input } from "@/components/ui"
+import { ItemCard3D } from "@/components/ItemCard3D"
 
 export const dynamic = "force-dynamic"
 
@@ -96,42 +97,22 @@ export default async function ItemsPage({
             }
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
-              <Link key={item.id} href={`/items/${item.id}`} className="group">
-                <Card className="h-full overflow-hidden transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-                  <div className="aspect-[4/3] w-full bg-slate-100">
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.imageUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="grid h-full place-items-center text-sm text-slate-400">
-                        no photo
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-2 p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="font-medium leading-snug text-slate-900">
-                        {item.title}
-                      </h2>
-                      <StatusBadge status={item.status} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Badge tone="blue">{item.category}</Badge>
-                      <Badge>{item.code}</Badge>
-                      {item.slot && <Badge tone="amber">Slot {item.slot}</Badge>}
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {item.owner.name ?? item.owner.rollNo ?? "A student"}
-                    </p>
-                  </div>
-                </Card>
-              </Link>
+              <ItemCard3D
+                key={item.id}
+                item={{
+                  id: item.id,
+                  title: item.title,
+                  category: item.category,
+                  code: item.code,
+                  slot: item.slot,
+                  status: item.status,
+                  imageUrl: item.imageUrl,
+                  description: item.description,
+                  ownerName: item.owner.name ?? "A student",
+                }}
+              />
             ))}
           </div>
         )}
