@@ -443,9 +443,9 @@ function Story() {
   )
 
   return (
-    <section ref={ref} className="relative lg:h-[340vh]">
+    <section ref={ref} id="how" className="relative scroll-mt-20 lg:h-[340vh]">
       {/* ── desktop: pinned, scroll drives the phone ── */}
-      <div className="sticky top-16 hidden h-[calc(100vh-4rem)] min-h-[40rem] items-center lg:flex">
+      <div className="sticky top-[4.25rem] hidden h-[calc(100vh-4.25rem)] min-h-[40rem] items-center lg:flex">
         <div className="mx-auto grid w-full max-w-6xl grid-cols-[1fr_auto] items-center gap-16 px-4">
           <div>
             {heading}
@@ -837,7 +837,7 @@ function Numbers({ total }: { total: number }) {
     { value: total, label: "Items listed on campus so far" },
   ]
   return (
-    <section className="relative isolate overflow-hidden bg-slate-950 py-24 text-white">
+    <section id="numbers" className="relative isolate scroll-mt-20 overflow-hidden bg-slate-950 py-24 text-white">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-[radial-gradient(50rem_30rem_at_20%_0%,rgb(99_102_241/0.35),transparent),radial-gradient(40rem_30rem_at_90%_100%,rgb(217_70_239/0.22),transparent)]"

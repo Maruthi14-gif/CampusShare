@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next"
-import Link from "next/link"
 import { Bricolage_Grotesque } from "next/font/google"
 import "./globals.css"
 import { auth } from "@/auth"
-import { SignOutButton } from "@/components/AuthButtons"
+import { Navbar } from "@/components/Navbar"
+import { Footer } from "@/components/Footer"
 
 export const metadata: Metadata = {
   title: "CampusShare — borrow what you need, lend what you don't",
@@ -35,57 +35,23 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`h-full antialiased ${display.variable}`}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
-        <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
-          <nav className="mx-auto flex h-16 w-full max-w-6xl items-center gap-6 px-4">
-            <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-                CS
-              </span>
-              <span className="hidden sm:inline">CampusShare</span>
-            </Link>
+        <Navbar
+          user={
+            session?.user
+              ? {
+                  name: session.user.name ?? null,
+                  email: session.user.email ?? null,
+                  image: session.user.image ?? null,
+                  rollNo: session.user.rollNo ?? null,
+                }
+              : null
+          }
+        />
 
-            <div className="ml-auto flex items-center gap-1 text-sm">
-              <Link
-                href="/items"
-                className="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100"
-              >
-                Browse
-              </Link>
-              {session?.user ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100"
-                  >
-                    My stuff
-                  </Link>
-                  <Link
-                    href="/items/new"
-                    className="rounded-lg bg-indigo-600 px-3.5 py-2 font-medium text-white transition hover:bg-indigo-700"
-                  >
-                    Lend an item
-                  </Link>
-                  <SignOutButton />
-                </>
-              ) : (
-                <Link
-                  href="/signin"
-                  className="rounded-lg bg-indigo-600 px-3.5 py-2 font-medium text-white transition hover:bg-indigo-700"
-                >
-                  Sign in
-                </Link>
-              )}
-            </div>
-          </nav>
-        </header>
+        {/* The navbar floats over the top of each page, so pull content up under it */}
+        <main className="-mt-[4.25rem] flex-1 pt-[4.25rem]">{children}</main>
 
-        <main className="flex-1">{children}</main>
-
-        <footer className="border-t border-slate-200 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-4 py-6 text-xs text-slate-500">
-            CampusShare · Frugal Innovation project · IIIT Dharwad · total build cost ₹121
-          </div>
-        </footer>
+        <Footer />
       </body>
     </html>
   )
