@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import Link from "next/link"
+import { Bricolage_Grotesque } from "next/font/google"
 import "./globals.css"
 import { auth } from "@/auth"
 import { SignOutButton } from "@/components/AuthButtons"
@@ -11,6 +12,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "CampusShare", statusBarStyle: "default" },
 }
+
+// Display face for big headlines. Self-hosted by Next at build time,
+// so there is no request to Google from the student's phone.
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  display: "swap",
+})
 
 export const viewport: Viewport = {
   themeColor: "#4f46e5",
@@ -24,7 +33,7 @@ export default async function RootLayout({
   const session = await auth()
 
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`h-full antialiased ${display.variable}`}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
           <nav className="mx-auto flex h-16 w-full max-w-6xl items-center gap-6 px-4">
