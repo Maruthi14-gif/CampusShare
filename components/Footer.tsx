@@ -33,7 +33,7 @@ export function Footer() {
       <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-4 pb-10 pt-16 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-12">
         <div className="col-span-2 max-w-xs md:col-span-1">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-[13px] font-bold text-white shadow-md shadow-indigo-600/30">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-600 text-[13px] font-bold text-white">
               CS
             </span>
             <span className="font-display text-lg font-semibold tracking-tight text-slate-900">CampusShare</span>
@@ -49,7 +49,7 @@ export function Footer() {
 
         {COLUMNS.map((col) => (
           <div key={col.title}>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{col.title}</p>
+            <p className="text-sm font-semibold text-ink">{col.title}</p>
             <ul className="mt-4 space-y-2.5">
               {col.links.map((l) => (
                 <li key={l.label}>
@@ -58,7 +58,7 @@ export function Footer() {
                     {...(l.external ? { target: "_blank", rel: "noreferrer" } : {})}
                     className="group inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-slate-950"
                   >
-                    <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-300 group-hover:bg-[length:100%_1.5px]">
+                    <span className="bg-gradient-to-r from-indigo-600 to-indigo-600 bg-[length:0%_1.5px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-300 group-hover:bg-[length:100%_1.5px]">
                       {l.label}
                     </span>
                     {l.external && <span className="text-slate-300 transition group-hover:text-slate-500">↗</span>}
@@ -70,7 +70,7 @@ export function Footer() {
         ))}
       </div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 border-t border-slate-100 px-4 py-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 border-t border-slate-100 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} CampusShare · Frugal Innovation project · IIIT Dharwad</p>
         <p>Made by students, for students.</p>
       </div>

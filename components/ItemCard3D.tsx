@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card"
 import { StatusBadge } from "@/components/ui"
@@ -23,7 +24,8 @@ export type ItemCardData = {
  * 60px, photo at 100px tilted (rotateX 20, rotateZ -10), and the two
  * actions pushed apart sideways (translateX -40 / 40).
  */
-export function ItemCard3D({ item }: { item: ItemCardData }) {
+/** @param priority load this card's photo first (the top card on a page). */
+export function ItemCard3D({ item, priority = false }: { item: ItemCardData; priority?: boolean }) {
   const photo = item.imageUrl ?? item.stock?.url ?? null
   const action = item.status === "AVAILABLE" ? "Borrow" : "View"
 
@@ -40,7 +42,7 @@ export function ItemCard3D({ item }: { item: ItemCardData }) {
             className="text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
           >
             {item.description ?? (item.status === "AVAILABLE" ? "Ready to borrow" : "Not available right now")}
-            <span className="mt-1 block text-xs text-neutral-400">
+            <span className="mt-1 block text-xs text-neutral-500">
               {item.category} · <span className="font-mono">{item.code}</span>
               {` · ${item.meetSpot}`}
             </span>
@@ -48,11 +50,12 @@ export function ItemCard3D({ item }: { item: ItemCardData }) {
           <CardItem translateZ="100" rotateX={20} rotateZ={-10} className="w-full mt-4">
             <div className="relative">
               {photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={photo}
-                  height="1000"
-                  width="1000"
+                  width={960}
+                  height={720}
+                  sizes="(min-width: 640px) 432px, 90vw"
+                  priority={priority}
                   className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
                   alt={item.title}
                 />
@@ -99,7 +102,7 @@ export function ItemCard3D({ item }: { item: ItemCardData }) {
 /** Last resort when even the stock-photo lookup fails: the tag code on a soft grid. */
 function NoPhoto({ code, category }: { code: string; category: string }) {
   return (
-    <div className="relative grid h-60 w-full place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-100 via-violet-50 to-fuchsia-100 group-hover/card:shadow-xl">
+    <div className="relative grid h-60 w-full place-items-center overflow-hidden rounded-xl bg-indigo-50 group-hover/card:shadow-xl">
       <div
         aria-hidden
         className="absolute inset-0 opacity-60 [background-image:linear-gradient(to_right,rgb(99_102_241/0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgb(99_102_241/0.10)_1px,transparent_1px)] [background-size:22px_22px]"

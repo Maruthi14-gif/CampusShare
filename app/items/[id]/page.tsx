@@ -1,9 +1,11 @@
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { itemQrDataUrl, baseUrl } from "@/lib/qr"
 import { findStockImage } from "@/lib/stockImage"
+import { photoSrc } from "@/lib/photo"
 import { formatDate, nowMs } from "@/lib/utils"
 import { RULES, whatsappLink } from "@/lib/campus"
 import { runHousekeeping, trustStats } from "@/lib/rules"
@@ -112,11 +114,17 @@ export default async function ItemPage({
             <div className="aspect-[16/10] w-full bg-slate-100">
               {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+                <img src={photoSrc("item", item.id, item.imageUrl)!} alt={item.title} className="h-full w-full object-cover" fetchPriority="high" />
               ) : stock ? (
                 <figure className="relative h-full w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={stock.url} alt={`Stock photo of a ${item.category.toLowerCase()}`} className="h-full w-full object-cover" />
+                  <Image
+                    src={stock.url}
+                    alt={`Stock photo of a ${item.category.toLowerCase()}`}
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 560px, 100vw"
+                    className="object-cover"
+                  />
                   <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8 text-[11px] leading-snug text-white/90">
                     <strong className="font-semibold text-white">Stock photo, not the actual item.</strong> Photo:{" "}
                     {stock.author},{" "}
@@ -126,12 +134,12 @@ export default async function ItemPage({
                   </figcaption>
                 </figure>
               ) : (
-                <div className="grid h-full place-items-center text-sm text-slate-400">no photo</div>
+                <div className="grid h-full place-items-center text-sm text-slate-500">no photo</div>
               )}
             </div>
             <div className="space-y-3 p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight">{item.title}</h1>
+                <h1 className="font-display text-2xl font-bold tracking-[-0.02em] text-ink">{item.title}</h1>
                 <StatusBadge status={item.status} />
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -160,7 +168,7 @@ export default async function ItemPage({
                 {loan.logs.map((log) => (
                   <figure key={log.id} className="space-y-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={log.photoUrl} alt="" className="aspect-[4/3] w-full rounded-xl object-cover ring-1 ring-slate-200" />
+                    <img src={photoSrc("log", log.id, log.photoUrl)!} alt={log.phase === "ISSUE" ? "Condition at handover" : "Condition on return"} loading="lazy" decoding="async" className="aspect-[4/3] w-full rounded-xl object-cover ring-1 ring-slate-200" />
                     <figcaption className="text-xs text-slate-500">
                       <span className="font-medium text-slate-700">{log.phase === "ISSUE" ? "At handover" : "On return"}</span> ·{" "}
                       {formatDate(log.createdAt)}
@@ -182,7 +190,7 @@ export default async function ItemPage({
                 <p className="text-sm text-slate-600">Sign in with your institute account to borrow this.</p>
                 <Link
                   href={`/signin?callbackUrl=${encodeURIComponent(`/items/${item.id}`)}`}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-indigo-600 text-sm font-medium text-white"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-ink text-sm font-semibold text-white hover:bg-indigo-700"
                 >
                   Sign in
                 </Link>

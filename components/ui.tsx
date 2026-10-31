@@ -24,9 +24,9 @@ export function Button({
         size === "md" && "h-11 px-5 text-sm",
         size === "lg" && "h-13 px-7 text-base",
         variant === "primary" &&
-          "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700",
+          "bg-ink text-white hover:bg-indigo-700",
         variant === "secondary" &&
-          "bg-white text-slate-800 ring-1 ring-slate-200 hover:bg-slate-50",
+          "bg-white text-ink ring-1 ring-slate-200 hover:ring-slate-300",
         variant === "ghost" && "text-slate-600 hover:bg-slate-100",
         variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
         className
@@ -110,7 +110,7 @@ export function Card({
     <div
       {...props}
       className={cn(
-        "rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm",
+        "rounded-2xl bg-white ring-1 ring-slate-200",
         className
       )}
     />

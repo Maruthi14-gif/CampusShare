@@ -27,7 +27,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">Your profile</h1>
+      <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em] text-ink">Your profile</h1>
       <p className="mt-2 text-sm text-slate-600">
         {user.name} · {user.email}
         {user.rollNo && ` · ${user.rollNo}`}

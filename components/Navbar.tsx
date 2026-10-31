@@ -171,8 +171,7 @@ export function Navbar({ user }: { user: NavUser | null }) {
 function Logo() {
   return (
     <Link href="/" className="group flex items-center gap-2.5 rounded-xl pr-2 font-semibold tracking-tight">
-      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 text-[13px] font-bold text-white shadow-md shadow-indigo-600/30">
-        <span className="absolute inset-0 bg-gradient-to-t from-transparent to-white/25" />
+      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-indigo-600 text-[13px] font-bold text-white">
         <span className="relative transition-transform duration-300 group-hover:scale-110">CS</span>
       </span>
       <span className="font-display text-[17px] text-slate-900">CampusShare</span>
@@ -193,7 +192,7 @@ function LendButton({ className }: { className?: string }) {
       {/* gradient wash that slides in on hover */}
       <span
         aria-hidden
-        className="absolute inset-0 translate-y-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-transform duration-300 group-hover:translate-y-0"
+        className="absolute inset-0 translate-y-full bg-indigo-600 transition-transform duration-300 group-hover:translate-y-0"
       />
       <span className="relative text-base leading-none">+</span>
       <span className="relative">Lend an item</span>
@@ -262,7 +261,7 @@ function AccountMenu({ user }: { user: NavUser }) {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Account menu"
-        className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 text-xs font-bold text-indigo-700 ring-2 ring-white shadow-sm transition hover:ring-indigo-200"
+        className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 ring-2 ring-white shadow-sm transition hover:ring-indigo-200"
       >
         {user.image ? (
           // eslint-disable-next-line @next/next/no-img-element

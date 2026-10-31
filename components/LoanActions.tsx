@@ -78,15 +78,13 @@ function Msg({ error, note, profileNext }: { error: string | null; note: string 
 /** Four big digits, the way an OTP is shown on a delivery app. */
 export function CodeDigits({ code, label }: { code: string; label: string }) {
   return (
-    <div className="rounded-2xl bg-slate-950 p-4 text-center text-white">
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-2 flex justify-center gap-2" aria-label={code.split("").join(" ")}>
-        {code.split("").map((d, i) => (
-          <span key={i} className="grid h-12 w-10 place-items-center rounded-lg bg-white/10 font-mono text-2xl font-bold">
-            {d}
-          </span>
-        ))}
-      </p>
+    <div className="flex justify-center py-1">
+      <div className="inline-grid -rotate-2 gap-1.5 rounded-xl border-[3px] border-stamp px-5 py-3 text-center text-stamp">
+        <p className="font-mono text-[11px] font-bold tracking-[0.12em]">{label}</p>
+        <p className="font-mono text-4xl font-bold leading-none tracking-[0.25em]" aria-label={code.split("").join(" ")}>
+          {code}
+        </p>
+      </div>
     </div>
   )
 }
@@ -406,7 +404,7 @@ export function ReportStudent({ loanId, who }: { loanId: string; who: string }) 
   const [text, setText] = useState("")
   if (!open)
     return (
-      <button type="button" onClick={() => setOpen(true)} className="text-xs text-slate-400 underline underline-offset-2 hover:text-slate-600">
+      <button type="button" onClick={() => setOpen(true)} className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-600">
         Report {who}
       </button>
     )

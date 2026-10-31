@@ -5,6 +5,7 @@ import { Empty, Input } from "@/components/ui"
 import { ItemCard3D } from "@/components/ItemCard3D"
 import { findStockImage } from "@/lib/stockImage"
 import { runHousekeeping } from "@/lib/rules"
+import { photoSrc } from "@/lib/photo"
 
 export const dynamic = "force-dynamic"
 
@@ -44,7 +45,7 @@ export default async function ItemsPage({
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Browse</h1>
+          <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em] text-ink">Browse</h1>
           <p className="mt-1.5 text-sm text-slate-600">
             {all ? "Everything on CampusShare" : "Free to borrow right now"}
           </p>
@@ -71,6 +72,7 @@ export default async function ItemsPage({
         />
         <select
           name="category"
+          aria-label="Category"
           defaultValue={category ?? ""}
           className="rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm ring-1 ring-inset ring-slate-300"
         >
@@ -101,7 +103,7 @@ export default async function ItemsPage({
             action={
               <Link
                 href="/items/new"
-                className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white"
+                className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-indigo-700"
               >
                 Lend an item
               </Link>
@@ -112,6 +114,7 @@ export default async function ItemsPage({
             {items.map((item, i) => (
               <ItemCard3D
                 key={item.id}
+                priority={i === 0}
                 item={{
                   id: item.id,
                   title: item.title,
@@ -119,7 +122,7 @@ export default async function ItemsPage({
                   code: item.code,
                   meetSpot: item.meetSpot,
                   status: item.status,
-                  imageUrl: item.imageUrl,
+                  imageUrl: photoSrc("item", item.id, item.imageUrl),
                   description: item.description,
                   stock: stock[i],
                 }}

@@ -8,8 +8,27 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-sans);
-  --font-sans: var(--font-sans);
+  --font-heading: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* ── CampusShare palette ──
+     Indigo ink on cool paper. Stamp red only for codes and alerts.
+     The indigo scale is remapped so every existing indigo-* class follows. */
+  --color-paper: #f4f5f8;
+  --color-ink: #12142b;
+  --color-stamp: #cf3428;
+  --color-indigo-50: #eff0fd;
+  --color-indigo-100: #e1e3fb;
+  --color-indigo-200: #c7caf7;
+  --color-indigo-300: #a3a7f1;
+  --color-indigo-400: #7a7ee8;
+  --color-indigo-500: #5458df;
+  --color-indigo-600: #3a3ed6;
+  --color-indigo-700: #2f32b4;
+  --color-indigo-800: #282b8f;
+  --color-indigo-900: #24276f;
+  --color-indigo-950: #15173f;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,38 +67,26 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ── Landing page motion (all pure CSS, so it costs no JavaScript) ── */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+/* The pickup-code stamp landing once on the landing page (Handover.tsx). */
+@keyframes stamp-land {
+  0% { transform: rotate(-16deg) scale(1.8); opacity: 0.15; }
+  70% { transform: rotate(-5deg) scale(0.96); opacity: 1; }
+  100% { transform: rotate(-6deg) scale(1); opacity: 1; }
 }
-@keyframes aurora {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  33% { transform: translate3d(6%, -4%, 0) scale(1.08); }
-  66% { transform: translate3d(-5%, 5%, 0) scale(0.95); }
-}
-@keyframes scanline {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(var(--scan-distance, 112px)); }
-}
-@keyframes ping-soft {
-  0% { transform: scale(1); opacity: 0.7; }
-  80%, 100% { transform: scale(2.4); opacity: 0; }
-}
-@keyframes shine {
-  from { transform: translateX(-120%) skewX(-20deg); }
-  to { transform: translateX(260%) skewX(-20deg); }
-}
+.stamp-land { animation: stamp-land 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 html {
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 }
+
+/* Lenis smooth scrolling (see components/SmoothScroll.tsx) */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 /* Respect users who ask for less motion. */
 @media (prefers-reduced-motion: reduce) {

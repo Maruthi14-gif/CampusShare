@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { formatDate, daysLeft } from "@/lib/utils"
 import { borrowerStanding, runHousekeeping } from "@/lib/rules"
 import { findStockImage } from "@/lib/stockImage"
+import { photoSrc } from "@/lib/photo"
 import { Badge, Card, Empty, StatusBadge } from "@/components/ui"
 import { ItemCard3D } from "@/components/ItemCard3D"
 
@@ -67,7 +68,7 @@ export default async function DashboardPage() {
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ""}</h1>
+          <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em] text-ink">Hello{firstName ? `, ${firstName}` : ""}</h1>
           <p className="mt-1.5 text-sm text-slate-600">{session.user.email}</p>
         </div>
         <Link href="/profile" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
@@ -112,7 +113,7 @@ export default async function DashboardPage() {
             body="Browse what other students have put up, or post a request."
             action={
               <div className="flex gap-2">
-                <Link href="/items" className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white">
+                <Link href="/items" className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-indigo-700">
                   Browse items
                 </Link>
                 <Link href="/requests" className="inline-flex h-11 items-center rounded-xl bg-white px-5 text-sm font-medium text-slate-700 ring-1 ring-slate-200">
@@ -172,7 +173,7 @@ export default async function DashboardPage() {
             title="You haven't listed anything"
             body="Think of something you bought and used twice."
             action={
-              <Link href="/items/new" className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white">
+              <Link href="/items/new" className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-indigo-700">
                 Lend an item
               </Link>
             }
@@ -189,7 +190,7 @@ export default async function DashboardPage() {
                   code: item.code,
                   meetSpot: item.meetSpot,
                   status: item.status,
-                  imageUrl: item.imageUrl,
+                  imageUrl: photoSrc("item", item.id, item.imageUrl),
                   description: item.description,
                   stock: stock[i],
                 }}

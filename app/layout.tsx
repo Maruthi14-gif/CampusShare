@@ -1,12 +1,18 @@
 import type { Metadata, Viewport } from "next"
-import { Bricolage_Grotesque, Geist } from "next/font/google"
+import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { auth } from "@/auth"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import { SmoothScroll } from "@/components/SmoothScroll"
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+// Body text and codes. Self-hosted by Next at build time.
+// display "optional": if the font isn't ready within ~100 ms the page keeps the
+// system font for that visit instead of re-drawing all its text later. That
+// late re-draw was what made the page's main text count as slow to appear.
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans", display: "optional" })
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "optional", preload: false })
 
 export const metadata: Metadata = {
   title: "CampusShare — borrow what you need, lend what you don't",
@@ -36,8 +42,9 @@ export default async function RootLayout({
   const session = await auth()
 
   return (
-    <html lang="en" className={cn("h-full", "antialiased", display.variable, "font-sans", geist.variable)}>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
+    <html lang="en" className={cn("h-full", "antialiased", display.variable, geist.variable, geistMono.variable, "font-sans")}>
+      <body className="min-h-full flex flex-col bg-paper text-ink">
+        <SmoothScroll />
         <Navbar
           user={
             session?.user

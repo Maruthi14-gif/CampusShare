@@ -122,7 +122,7 @@ export function NewItemForm({
             </Select>
           </Field>
 
-          <label className={`flex items-start gap-2.5 text-sm ${hasRoom ? "text-slate-700" : "text-slate-400"}`}>
+          <label className={`flex items-start gap-2.5 text-sm ${hasRoom ? "text-slate-700" : "text-slate-500"}`}>
             <input
               type="checkbox"
               name="allowRoom"
