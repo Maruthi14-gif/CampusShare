@@ -5,13 +5,13 @@
 
 // Hostel names exactly as students know them. Two students in the SAME
 // hostel may hand over at the lender's room; anyone else meets at a spot.
-export const HOSTELS = ["Boys Hostel 1", "Boys Hostel 2", "Girls Hostel"] as const
+export const HOSTELS = ["B-Block", "G-Block"] as const
 
 // Busy, public places for handovers between different hostels.
 export const MEET_SPOTS = [
   "Library entrance",
-  "Academic block lobby",
-  "Mess entrance",
+  "Academic e-block entrance",
+  "KRC or M-Block",
   "Main gate security desk",
 ] as const
 
