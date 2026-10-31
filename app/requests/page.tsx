@@ -8,7 +8,8 @@ import { RequestActions, RequestForm } from "@/components/RequestsUI"
 
 export const dynamic = "force-dynamic"
 
-export default async function RequestsPage() {
+export default async function RequestsPage({ searchParams }: { searchParams: Promise<{ title?: string }> }) {
+  const { title } = await searchParams
   await runHousekeeping()
   const session = await auth()
   const me = session?.user?.id ?? null
@@ -74,7 +75,7 @@ export default async function RequestsPage() {
 
         <div>
           {me ? (
-            <RequestForm today={today} />
+            <RequestForm today={today} defaultTitle={(title ?? "").slice(0, 80)} />
           ) : (
             <Card className="p-6 text-sm text-slate-600">Sign in with your institute account to post a request.</Card>
           )}

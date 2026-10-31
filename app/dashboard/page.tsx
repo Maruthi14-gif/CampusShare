@@ -4,10 +4,9 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { formatDate, daysLeft } from "@/lib/utils"
 import { borrowerStanding, runHousekeeping } from "@/lib/rules"
-import { findStockImage } from "@/lib/stockImage"
-import { photoSrc } from "@/lib/photo"
+import { CATALOGUE_SELECT, toCatalogue } from "@/lib/catalogue"
 import { Badge, Card, Empty, StatusBadge } from "@/components/ui"
-import { ItemCard3D } from "@/components/ItemCard3D"
+import { CatalogueCard } from "@/components/CatalogueCard"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +21,7 @@ export default async function DashboardPage() {
   const [profile, standing, myItems, myBorrows, onMyItems, heldForMe, myRequests] = await Promise.all([
     prisma.user.findUnique({ where: { id: me }, select: { hostel: true } }),
     borrowerStanding(me),
-    prisma.item.findMany({ where: { ownerId: me }, orderBy: { createdAt: "desc" } }),
+    prisma.item.findMany({ where: { ownerId: me }, select: CATALOGUE_SELECT, orderBy: { createdAt: "desc" } }),
     prisma.loan.findMany({
       where: { borrowerId: me, status: { in: [...OPEN] } },
       include: { item: { select: { id: true, title: true, code: true } } },
@@ -44,7 +43,7 @@ export default async function DashboardPage() {
     }),
   ])
 
-  const stock = await Promise.all(myItems.map((i) => (i.imageUrl ? null : findStockImage(i.title, i.category))))
+  const myCards = await toCatalogue(myItems)
 
   // Everything that needs a tap from me, as one list.
   const todo: { href: string; title: string; text: string; status: string }[] = []
@@ -179,22 +178,9 @@ export default async function DashboardPage() {
             }
           />
         ) : (
-          <div className="grid justify-items-center gap-x-6 lg:grid-cols-2">
-            {myItems.map((item, i) => (
-              <ItemCard3D
-                key={item.id}
-                item={{
-                  id: item.id,
-                  title: item.title,
-                  category: item.category,
-                  code: item.code,
-                  meetSpot: item.meetSpot,
-                  status: item.status,
-                  imageUrl: photoSrc("item", item.id, item.imageUrl),
-                  description: item.description,
-                  stock: stock[i],
-                }}
-              />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {myCards.map((item) => (
+              <CatalogueCard key={item.id} item={item} />
             ))}
           </div>
         )}

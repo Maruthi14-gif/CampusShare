@@ -10,7 +10,7 @@ import { Button, Card, Field, Input, Select, Textarea } from "@/components/ui"
 
 /* ── Post a request ────────────────────────────────────── */
 
-export function RequestForm({ today }: { today: string }) {
+export function RequestForm({ today, defaultTitle = "" }: { today: string; defaultTitle?: string }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +43,7 @@ export function RequestForm({ today }: { today: string }) {
       <p className="mt-1 text-sm text-slate-600">Post it here. Anyone who has one can lend it to you in one tap.</p>
       <form action={onSubmit} className="mt-5 space-y-4" key={done ? "sent" : "form"}>
         <Field label="What do you need?">
-          <Input name="title" required maxLength={80} placeholder="Scientific calculator" />
+          <Input name="title" required maxLength={80} placeholder="Scientific calculator" defaultValue={defaultTitle} />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Category">
