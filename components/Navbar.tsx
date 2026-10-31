@@ -72,7 +72,7 @@ export function Navbar({ user }: { user: NavUser | null }) {
           aria-label="Main"
           className={cn(
             "mx-auto flex h-14 w-full max-w-6xl items-center gap-2 rounded-2xl pl-2.5 pr-2 transition-all duration-300",
-            "bg-white/70 ring-1 ring-slate-900/5 backdrop-blur-xl backdrop-saturate-150",
+            "bg-white ring-1 ring-slate-900/5",
             scrolled || menuOpen ? "shadow-[0_8px_30px_-12px_rgb(30_27_75/0.25)]" : "shadow-sm"
           )}
         >
@@ -131,7 +131,7 @@ export function Navbar({ user }: { user: NavUser | null }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ duration: 0.25, ease: EASE }}
-              className="mx-auto mt-2 w-full max-w-6xl origin-top overflow-hidden rounded-2xl bg-white/90 p-2 shadow-xl ring-1 ring-slate-900/5 backdrop-blur-xl md:hidden"
+              className="mx-auto mt-2 w-full max-w-6xl origin-top overflow-hidden rounded-2xl bg-white p-2 shadow-xl ring-1 ring-slate-900/5 backdrop-blur-xl md:hidden"
             >
               <ul>
                 {[...links, ...(user ? [] : [{ href: "/signin", label: "Sign in", match: (p: string) => p === "/signin" }])].map(

@@ -12,7 +12,14 @@ import { SmoothScroll } from "@/components/SmoothScroll"
 // system font for that visit instead of re-drawing all its text later. That
 // late re-draw was what made the page's main text count as slow to appear.
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans", display: "optional" })
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" })
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+  // While it loads, use the device's own modern monospace, not a Courier-like stand-in.
+  adjustFontFallback: false,
+  fallback: ["ui-monospace", "SFMono-Regular", "Cascadia Mono", "Consolas", "monospace"],
+})
 
 export const metadata: Metadata = {
   title: "CampusShare — borrow what you need, lend what you don't",

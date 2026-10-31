@@ -80,8 +80,8 @@ export function BrowseClient({
         </Link>
       </header>
 
-      {/* sticky search + filters, sitting just under the floating navbar */}
-      <div className="sticky top-[4.25rem] z-30 -mx-4 mt-5 grid gap-3 bg-paper/90 px-4 py-3 backdrop-blur-md">
+      {/* search + filters scroll with the page; "/" brings the search box back */}
+      <div className="mt-6 grid gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <label className="flex h-12 min-w-0 flex-1 basis-64 items-center gap-2.5 rounded-[14px] border border-slate-200 bg-white px-3.5 focus-within:border-indigo-600 focus-within:ring-[3px] focus-within:ring-indigo-100">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-slate-500" aria-hidden>
@@ -143,7 +143,7 @@ export function BrowseClient({
         </div>
       </div>
 
-      <div aria-live="polite" className="mt-3">
+      <div aria-live="polite" className="mt-6">
         {shown.length === 0 ? (
           <div className="grid justify-items-center gap-2.5 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
             <h2 className="font-display text-xl font-bold text-ink">
