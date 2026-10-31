@@ -33,7 +33,17 @@ These become the "what was hardest" answers in a viva or interview.
 - [ ] Scan that QR with a phone camera — opens the item page
 - [ ] Reserve from a second account — pickup code shown
 - [ ] Two accounts reserve simultaneously — one wins, one sees a clean error
-- [ ] Issue with a photo → collect → return with a photo → verify
+- [ ] Fill in hostel on the profile page; borrowing without it is refused
+- [ ] Same hostel + room allowed: meeting place shows the lender's room. Different hostel: the public spot
+- [ ] Borrower sees the pickup code, lender does NOT. Lender types it + photo → "with borrower"
+- [ ] A wrong code is refused; 5 wrong codes issue a fresh one
+- [ ] Lender sees the return code, borrower does NOT. Borrower types it + photo → "returned"
+- [ ] Owner closes the loan as fine, or reports a problem (item pauses)
+- [ ] Ask for more days → owner approves → due date moves
+- [ ] Reservation not handed over in 24h cancels itself
+- [ ] Waitlist: item comes back held for #1 in line
+- [ ] Requests: post one, another student lends in one tap; WhatsApp share works
+- [ ] Third active borrow is refused; 2 late returns pause borrowing
 - [ ] Both condition photos show side by side
 - [ ] Item returns to AVAILABLE at the end
 - [ ] Overdue badge appears (set `dueAt` to the past in Prisma Studio to test)

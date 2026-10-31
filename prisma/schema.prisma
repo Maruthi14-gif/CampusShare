@@ -8,8 +8,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ───────── Auth.js tables (required by @auth/prisma-adapter) ─────────
@@ -22,11 +22,21 @@ model User {
   image         String?
   rollNo        String?
 
+  // Set once on the profile page. Decides where a handover happens:
+  // same hostel -> the lender's room (if they allow it), else a common spot.
+  hostel String?
+  room   String? // private: shown only to a same-hostel borrower in an active loan
+  phone  String? // private: shown only to the other person in an active loan
+
   accounts Account[]
   sessions Session[]
 
-  items    Item[] // things this user lends
-  borrowed Loan[] @relation("borrower")
+  items           Item[] // things this user lends
+  borrowed        Loan[]          @relation("borrower")
+  requests        Request[]
+  waitlist        WaitlistEntry[]
+  reportsMade     Report[]        @relation("reporter")
+  reportsReceived Report[]        @relation("reported")
 
   createdAt DateTime @default(now())
 }
@@ -78,12 +88,23 @@ model Item {
   condition   String     @default("good") // good | fair | worn
   imageUrl    String?
   status      ItemStatus @default(AVAILABLE)
-  slot        String? // S1..S6 at the lending point
+  slot        String? // legacy: from the locker design, no longer shown
+
+  // Where the lender hands it over. allowRoom = same-hostel borrowers may
+  // come to the lender's room instead.
+  meetSpot  String  @default("Library entrance")
+  allowRoom Boolean @default(false)
+
+  // Waitlist hold: when the item comes back, the next person in line gets
+  // it to themselves until holdUntil.
+  holdUserId String?
+  holdUntil  DateTime?
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  loans Loan[]
+  loans    Loan[]
+  waitlist WaitlistEntry[]
 
   createdAt DateTime @default(now())
 
@@ -99,14 +120,23 @@ model Loan {
   borrower   User       @relation("borrower", fields: [borrowerId], references: [id], onDelete: Cascade)
   status     LoanStatus @default(RESERVED)
 
-  pickupCode String // 4 digits shown to the borrower
-  slot       String?
+  pickupCode  String // OTP only the BORROWER sees; the lender types it at handover
+  returnCode  String  @default("") // OTP only the LENDER sees; the borrower types it at return
+  codeTries   Int     @default(0) // wrong pickup codes typed so far
+  returnTries Int     @default(0) // wrong return codes typed so far
+  meetPlace   String? // decided at reservation: a room or a common spot
+  slot        String? // legacy
+
+  extendDays        Int? // borrower asked for this many extra days; owner decides
+  returnRequestedAt DateTime? // owner asked for it back early
+  problemNote       String? // owner's note when reporting damage
 
   dueAt       DateTime
   issuedAt    DateTime?
   collectedAt DateTime?
   returnedAt  DateTime?
   verifiedAt  DateTime?
+  closedAt    DateTime? // when it was cancelled, expired, lost or closed with a problem
 
   logs ConditionLog[]
 
@@ -119,9 +149,9 @@ model Loan {
 // The before/after photo pair — this is the whole trust mechanism.
 // Kept in its own table so both photos can be shown side by side.
 model ConditionLog {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   loanId   String
-  loan     Loan   @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  loan     Loan    @relation(fields: [loanId], references: [id], onDelete: Cascade)
   phase    String // "ISSUE" | "RETURN"
   photoUrl String
   notes    String?
@@ -134,6 +164,8 @@ enum ItemStatus {
   RESERVED
   ISSUED
   AWAITING_CHECK
+  PAUSED // owner is away or rechecking it
+  LOST
 }
 
 enum LoanStatus {
@@ -143,4 +175,57 @@ enum LoanStatus {
   RETURNED
   VERIFIED
   CANCELLED
+  EXPIRED // not handed over within 24 hours
+  PROBLEM // returned, owner reported damage
+  LOST
+}
+
+// ───────── Requests board, waitlist, reports ─────────
+
+// "I need a calculator for Thursday" — anyone can offer to lend.
+model Request {
+  id       String        @id @default(cuid())
+  userId   String
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title    String
+  category String
+  note     String?
+  neededBy DateTime // hidden after this
+  status   RequestStatus @default(OPEN)
+  loanId   String? // the reservation that fulfilled it
+
+  createdAt DateTime @default(now())
+
+  @@index([status, neededBy])
+}
+
+enum RequestStatus {
+  OPEN
+  FULFILLED
+  CLOSED
+}
+
+model WaitlistEntry {
+  id     String @id @default(cuid())
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([itemId, userId])
+}
+
+// Read by the organisers in Prisma Studio.
+model Report {
+  id         String  @id @default(cuid())
+  reporterId String
+  reporter   User    @relation("reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedId String
+  reported   User    @relation("reported", fields: [reportedId], references: [id], onDelete: Cascade)
+  loanId     String?
+  reason     String
+
+  createdAt DateTime @default(now())
 }

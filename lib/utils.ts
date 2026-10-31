@@ -58,3 +58,11 @@ export function isOverdue(loan: { dueAt: Date | string; status: string }) {
   const open = ["RESERVED", "ISSUED", "COLLECTED"]
   return open.includes(loan.status) && new Date(loan.dueAt).getTime() < Date.now()
 }
+
+/**
+ * Current time, read once per server render. Server pages are rendered
+ * fresh for every request, so "now" is exactly what they should show.
+ */
+export function nowMs() {
+  return Date.now()
+}

@@ -3,9 +3,10 @@ import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { formatDate, daysLeft } from "@/lib/utils"
+import { borrowerStanding, runHousekeeping } from "@/lib/rules"
+import { findStockImage } from "@/lib/stockImage"
 import { Badge, Card, Empty, StatusBadge } from "@/components/ui"
 import { ItemCard3D } from "@/components/ItemCard3D"
-import { findStockImage } from "@/lib/stockImage"
 
 export const dynamic = "force-dynamic"
 
@@ -15,162 +16,226 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/signin")
   const me = session.user.id
+  await runHousekeeping()
 
-  const [myItems, myBorrows, needsMe] = await Promise.all([
-    prisma.item.findMany({
-      where: { ownerId: me },
-      orderBy: { createdAt: "desc" },
-    }),
+  const [profile, standing, myItems, myBorrows, onMyItems, heldForMe, myRequests] = await Promise.all([
+    prisma.user.findUnique({ where: { id: me }, select: { hostel: true } }),
+    borrowerStanding(me),
+    prisma.item.findMany({ where: { ownerId: me }, orderBy: { createdAt: "desc" } }),
     prisma.loan.findMany({
       where: { borrowerId: me, status: { in: [...OPEN] } },
-      include: { item: { select: { id: true, title: true, code: true, slot: true } } },
+      include: { item: { select: { id: true, title: true, code: true } } },
       orderBy: { dueAt: "asc" },
     }),
-    // Loans on MY items that are waiting for an action from me
+    // Open loans on MY items
     prisma.loan.findMany({
-      where: { item: { ownerId: me }, status: { in: ["RESERVED", "RETURNED"] } },
-      include: {
-        item: { select: { id: true, title: true, code: true } },
-        borrower: { select: { name: true, rollNo: true } },
-      },
+      where: { item: { ownerId: me }, status: { in: [...OPEN] } },
+      include: { item: { select: { id: true, title: true } }, borrower: { select: { name: true, rollNo: true } } },
       orderBy: { createdAt: "asc" },
+    }),
+    prisma.item.findMany({
+      where: { holdUserId: me, holdUntil: { gt: new Date() }, status: "AVAILABLE" },
+      select: { id: true, title: true, holdUntil: true },
+    }),
+    prisma.request.findMany({
+      where: { userId: me, status: "OPEN", neededBy: { gte: new Date() } },
+      orderBy: { neededBy: "asc" },
     }),
   ])
 
-  const stock = await Promise.all(
-    myItems.map((i) => (i.imageUrl ? null : findStockImage(i.title, i.category)))
-  )
+  const stock = await Promise.all(myItems.map((i) => (i.imageUrl ? null : findStockImage(i.title, i.category))))
+
+  // Everything that needs a tap from me, as one list.
+  const todo: { href: string; title: string; text: string; status: string }[] = []
+  for (const l of onMyItems) {
+    const who = l.borrower.name?.split(" ")[0] ?? l.borrower.rollNo ?? "A student"
+    if (l.status === "RESERVED")
+      todo.push({ href: `/items/${l.item.id}`, title: l.item.title, text: `${who} reserved it — meet at ${l.meetPlace} and hand it over`, status: l.status })
+    if (l.status === "RETURNED")
+      todo.push({ href: `/items/${l.item.id}`, title: l.item.title, text: `${who} returned it — check the photos and close the loan`, status: l.status })
+    if (l.extendDays)
+      todo.push({ href: `/items/${l.item.id}`, title: l.item.title, text: `${who} asked for ${l.extendDays} more day${l.extendDays === 1 ? "" : "s"}`, status: l.status })
+  }
+  for (const l of myBorrows) {
+    if (l.returnRequestedAt)
+      todo.push({ href: `/items/${l.item.id}`, title: l.item.title, text: "The owner needs it back early", status: l.status })
+  }
+
+  const firstName = session.user.name?.split(" ")[0]
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
-      <h1 className="text-3xl font-semibold tracking-tight">
-        Hello{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}
-      </h1>
-      <p className="mt-1.5 text-sm text-slate-600">{session.user.email}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ""}</h1>
+          <p className="mt-1.5 text-sm text-slate-600">{session.user.email}</p>
+        </div>
+        <Link href="/profile" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+          Edit profile
+        </Link>
+      </div>
 
-      {/* ── things waiting on you ── */}
-      {needsMe.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold tracking-tight">Waiting for you</h2>
-          <div className="mt-4 space-y-3">
-            {needsMe.map((loan) => (
-              <Link key={loan.id} href={`/items/${loan.item.id}`}>
-                <Card className="flex flex-wrap items-center gap-3 p-4 transition hover:shadow-md">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{loan.item.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {loan.status === "RESERVED"
-                        ? `${loan.borrower.name ?? loan.borrower.rollNo} reserved it — hand it over and mark issued`
-                        : `${loan.borrower.name ?? loan.borrower.rollNo} returned it — check the condition photos`}
-                    </p>
-                  </div>
-                  <StatusBadge status={loan.status} />
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
+      {!profile?.hostel && (
+        <Banner tone="amber">
+          Add your hostel to start borrowing and lending.{" "}
+          <Link href="/profile?next=/dashboard" className="font-semibold underline underline-offset-2">
+            Finish your profile
+          </Link>
+        </Banner>
+      )}
+      {standing.reason && <Banner tone={standing.blockedUntil ? "red" : "amber"}>{standing.reason}</Banner>}
+
+      {heldForMe.length > 0 && (
+        <Section title="Held for you">
+          {heldForMe.map((i) => (
+            <Row key={i.id} href={`/items/${i.id}`} title={i.title} text={`Your turn from the waitlist — reserve before ${formatDate(i.holdUntil!)}`}>
+              <Badge tone="green">held</Badge>
+            </Row>
+          ))}
+        </Section>
       )}
 
-      {/* ── borrowing ── */}
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold tracking-tight">You&apos;re borrowing</h2>
-        <div className="mt-4">
-          {myBorrows.length === 0 ? (
-            <Empty
-              title="Nothing borrowed right now"
-              body="Browse what other students have put up."
-              action={
-                <Link
-                  href="/items"
-                  className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white"
-                >
+      {todo.length > 0 && (
+        <Section title="Waiting for you">
+          {todo.map((t, i) => (
+            <Row key={i} href={t.href} title={t.title} text={t.text}>
+              <StatusBadge status={t.status} />
+            </Row>
+          ))}
+        </Section>
+      )}
+
+      <Section title="You're borrowing">
+        {myBorrows.length === 0 ? (
+          <Empty
+            title="Nothing borrowed right now"
+            body="Browse what other students have put up, or post a request."
+            action={
+              <div className="flex gap-2">
+                <Link href="/items" className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white">
                   Browse items
                 </Link>
-              }
-            />
-          ) : (
-            <div className="space-y-3">
-              {myBorrows.map((loan) => {
-                const left = daysLeft(loan.dueAt)
-                const overdue = left < 0 && loan.status !== "RETURNED"
-                return (
-                  <Link key={loan.id} href={`/items/${loan.item.id}`}>
-                    <Card className="flex flex-wrap items-center gap-3 p-4 transition hover:shadow-md">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{loan.item.title}</p>
-                        <p className="text-xs text-slate-500">
-                          {loan.item.code}
-                          {loan.item.slot && ` · slot ${loan.item.slot}`} · due{" "}
-                          {formatDate(loan.dueAt)}
-                        </p>
-                      </div>
-                      {overdue ? (
-                        <Badge tone="red">
-                          {Math.abs(left)} day{Math.abs(left) === 1 ? "" : "s"} overdue
-                        </Badge>
-                      ) : (
-                        <Badge tone={left <= 1 ? "amber" : "grey"}>
-                          {left} day{left === 1 ? "" : "s"} left
-                        </Badge>
-                      )}
-                      <StatusBadge status={loan.status} />
-                    </Card>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </section>
+                <Link href="/requests" className="inline-flex h-11 items-center rounded-xl bg-white px-5 text-sm font-medium text-slate-700 ring-1 ring-slate-200">
+                  Post a request
+                </Link>
+              </div>
+            }
+          />
+        ) : (
+          myBorrows.map((loan) => {
+            const left = daysLeft(loan.dueAt)
+            const out = loan.status === "ISSUED" || loan.status === "COLLECTED"
+            const overdue = out && left < 0
+            return (
+              <Row
+                key={loan.id}
+                href={`/items/${loan.item.id}`}
+                title={loan.item.title}
+                text={`${loan.item.code} · ${loan.status === "RESERVED" ? `pick up at ${loan.meetPlace}` : `due ${formatDate(loan.dueAt)}`}`}
+              >
+                {overdue ? (
+                  <Badge tone="red">
+                    {Math.abs(left)} day{Math.abs(left) === 1 ? "" : "s"} overdue
+                  </Badge>
+                ) : out ? (
+                  <Badge tone={left <= 1 ? "amber" : "grey"}>
+                    {left} day{left === 1 ? "" : "s"} left
+                  </Badge>
+                ) : null}
+                <StatusBadge status={loan.status} />
+              </Row>
+            )
+          })
+        )}
+      </Section>
 
-      {/* ── lending ── */}
-      <section className="mt-10">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">You&apos;re lending</h2>
-          <Link
-            href="/items/new"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-          >
+      {myRequests.length > 0 && (
+        <Section title="Your requests" action={<Link href="/requests" className="text-sm font-medium text-indigo-600">See all</Link>}>
+          {myRequests.map((r) => (
+            <Row key={r.id} href="/requests" title={r.title} text={`Needed by ${formatDate(r.neededBy)} · waiting for a lender`}>
+              <Badge tone="amber">open</Badge>
+            </Row>
+          ))}
+        </Section>
+      )}
+
+      <Section
+        title="You're lending"
+        action={
+          <Link href="/items/new" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
             + Add another
           </Link>
-        </div>
-        <div className="mt-4">
-          {myItems.length === 0 ? (
-            <Empty
-              title="You haven't listed anything"
-              body="Think of something you bought and used twice."
-              action={
-                <Link
-                  href="/items/new"
-                  className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white"
-                >
-                  Lend an item
-                </Link>
-              }
-            />
-          ) : (
-            <div className="grid justify-items-center gap-x-6 lg:grid-cols-2">
-              {myItems.map((item, i) => (
-                <ItemCard3D
-                  key={item.id}
-                  item={{
-                    id: item.id,
-                    title: item.title,
-                    category: item.category,
-                    code: item.code,
-                    slot: item.slot,
-                    status: item.status,
-                    imageUrl: item.imageUrl,
-                    description: item.description,
-                    stock: stock[i],
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+        }
+      >
+        {myItems.length === 0 ? (
+          <Empty
+            title="You haven't listed anything"
+            body="Think of something you bought and used twice."
+            action={
+              <Link href="/items/new" className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-5 text-sm font-medium text-white">
+                Lend an item
+              </Link>
+            }
+          />
+        ) : (
+          <div className="grid justify-items-center gap-x-6 lg:grid-cols-2">
+            {myItems.map((item, i) => (
+              <ItemCard3D
+                key={item.id}
+                item={{
+                  id: item.id,
+                  title: item.title,
+                  category: item.category,
+                  code: item.code,
+                  meetSpot: item.meetSpot,
+                  status: item.status,
+                  imageUrl: item.imageUrl,
+                  description: item.description,
+                  stock: stock[i],
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </Section>
     </div>
+  )
+}
+
+function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="mt-10">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+        {action}
+      </div>
+      <div className="mt-4 space-y-3">{children}</div>
+    </section>
+  )
+}
+
+function Row({ href, title, text, children }: { href: string; title: string; text: string; children?: React.ReactNode }) {
+  return (
+    <Link href={href} className="block">
+      <Card className="flex flex-wrap items-center gap-3 p-4 transition hover:shadow-md">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{title}</p>
+          <p className="text-xs text-slate-500">{text}</p>
+        </div>
+        {children}
+      </Card>
+    </Link>
+  )
+}
+
+function Banner({ tone, children }: { tone: "amber" | "red"; children: React.ReactNode }) {
+  return (
+    <p
+      className={`mt-6 rounded-xl px-4 py-3 text-sm ring-1 ${
+        tone === "red" ? "bg-red-50 text-red-800 ring-red-200" : "bg-amber-50 text-amber-900 ring-amber-200"
+      }`}
+    >
+      {children}
+    </p>
   )
 }

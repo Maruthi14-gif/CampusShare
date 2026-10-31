@@ -4,6 +4,7 @@ import { CATEGORIES } from "@/lib/utils"
 import { Empty, Input } from "@/components/ui"
 import { ItemCard3D } from "@/components/ItemCard3D"
 import { findStockImage } from "@/lib/stockImage"
+import { runHousekeeping } from "@/lib/rules"
 
 export const dynamic = "force-dynamic"
 
@@ -13,10 +14,11 @@ export default async function ItemsPage({
   searchParams: Promise<{ q?: string; category?: string; all?: string }>
 }) {
   const { q, category, all } = await searchParams
+  await runHousekeeping()
 
   const items = await prisma.item.findMany({
     where: {
-      ...(all ? {} : { status: "AVAILABLE" }),
+      ...(all ? { status: { not: "LOST" } } : { status: "AVAILABLE" }),
       ...(category ? { category } : {}),
       ...(q
         ? {
@@ -47,6 +49,9 @@ export default async function ItemsPage({
             {all ? "Everything on CampusShare" : "Free to borrow right now"}
           </p>
         </div>
+        <Link href="/requests" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+          Can&apos;t find it? Post a request →
+        </Link>
         <Link
           href={all ? "/items" : "/items?all=1"}
           className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
@@ -112,7 +117,7 @@ export default async function ItemsPage({
                   title: item.title,
                   category: item.category,
                   code: item.code,
-                  slot: item.slot,
+                  meetSpot: item.meetSpot,
                   status: item.status,
                   imageUrl: item.imageUrl,
                   description: item.description,

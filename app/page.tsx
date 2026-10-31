@@ -15,7 +15,7 @@ export default async function HomePage() {
       prisma.item.count(),
       prisma.item.findMany({
         where: { status: "AVAILABLE" },
-        select: { id: true, title: true, category: true, code: true, slot: true },
+        select: { id: true, title: true, category: true, code: true, meetSpot: true },
         orderBy: { createdAt: "desc" },
         take: 2,
       }),

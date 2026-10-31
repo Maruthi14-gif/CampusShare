@@ -20,14 +20,16 @@ things come back late or damaged with nobody accountable.
 
 ## How it works
 
-1. Lender tags an item with a printed QR sticker and lists it
-2. Borrower searches, sees live availability, reserves — gets a pickup code
-3. Lender drops it in a numbered slot and marks it issued, with a condition photo
-4. Borrower collects it, confirms the condition
-5. On the due date, borrower returns it to the slot with a second photo
-6. Lender compares the two photos and closes the loan
+1. Each student signs in with their college Google account and sets their hostel once
+2. Lender lists an item and picks a public handover spot (and, optionally, their room for same-hostel borrowers)
+3. Borrower reserves it and gets a 4-digit **pickup code** — like a food-delivery OTP, only they can see it
+4. They meet: same hostel → the lender's room; different hostels → the public spot
+5. Lender takes a condition photo and types the borrower's code → the item is now with the borrower
+6. At return, the lender reads out their own **return code**; the borrower types it with a second photo
+7. Lender compares the two photos and closes the loan — or reports a problem
 
-The two never need to meet. The box does the handover.
+Nobody can be handed an item, or claim a return, without the other person's code.
+Can't find something? Post a **request**; anyone who has one can lend it in one tap.
 
 ## Architecture
 

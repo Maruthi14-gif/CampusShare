@@ -55,6 +55,7 @@ export function Navbar({ user }: { user: NavUser | null }) {
 
   const links: NavLink[] = [
     { href: "/items", label: "Browse", match: (p) => p === "/items" || (p.startsWith("/items/") && p !== "/items/new") },
+    { href: "/requests", label: "Requests", match: (p) => p.startsWith("/requests") },
     ...(user
       ? [{ href: "/dashboard", label: "My stuff", match: (p: string) => p.startsWith("/dashboard") }]
       : [{ href: "/#how", label: "How it works", match: () => false }]),
@@ -292,6 +293,7 @@ function AccountMenu({ user }: { user: NavUser }) {
             </div>
             <div className="my-1 h-px bg-slate-100" />
             <MenuLink href="/dashboard" onClick={() => setOpen(false)}>My stuff</MenuLink>
+            <MenuLink href="/profile" onClick={() => setOpen(false)}>Profile</MenuLink>
             <MenuLink href="/items/new" onClick={() => setOpen(false)}>Lend an item</MenuLink>
             <div className="my-1 h-px bg-slate-100" />
             <button

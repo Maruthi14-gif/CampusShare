@@ -68,18 +68,36 @@ export function Badge({
 }
 
 /** Maps an item or loan status to a coloured badge. */
+const STATUS_TONE: Record<string, keyof typeof TONES> = {
+  AVAILABLE: "green",
+  VERIFIED: "green",
+  RESERVED: "amber",
+  ISSUED: "blue",
+  COLLECTED: "blue",
+  RETURNED: "amber",
+  AWAITING_CHECK: "amber",
+  PROBLEM: "red",
+  LOST: "red",
+  PAUSED: "grey",
+  CANCELLED: "grey",
+  EXPIRED: "grey",
+}
+
+// What each status means to a student, in plain words.
+const STATUS_LABEL: Record<string, string> = {
+  ISSUED: "with borrower",
+  COLLECTED: "with borrower",
+  AWAITING_CHECK: "being checked",
+  RETURNED: "returned",
+  PROBLEM: "problem reported",
+}
+
 export function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === "AVAILABLE" || status === "VERIFIED"
-      ? "green"
-      : status === "RESERVED"
-        ? "amber"
-        : status === "ISSUED" || status === "COLLECTED"
-          ? "blue"
-          : status === "AWAITING_CHECK" || status === "RETURNED"
-            ? "amber"
-            : "grey"
-  return <Badge tone={tone}>{status.replace("_", " ").toLowerCase()}</Badge>
+  return (
+    <Badge tone={STATUS_TONE[status] ?? "grey"}>
+      {STATUS_LABEL[status] ?? status.replace("_", " ").toLowerCase()}
+    </Badge>
+  )
 }
 
 /* ── Card ──────────────────────────────────────────────── */

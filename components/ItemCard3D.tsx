@@ -9,7 +9,7 @@ export type ItemCardData = {
   title: string
   category: string
   code: string
-  slot: string | null
+  meetSpot: string
   status: string
   imageUrl: string | null
   description: string | null
@@ -39,10 +39,10 @@ export function ItemCard3D({ item }: { item: ItemCardData }) {
             translateZ="60"
             className="text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
           >
-            {item.description ?? `${item.category} · ready to borrow`}
+            {item.description ?? (item.status === "AVAILABLE" ? "Ready to borrow" : "Not available right now")}
             <span className="mt-1 block text-xs text-neutral-400">
               {item.category} · <span className="font-mono">{item.code}</span>
-              {item.slot && ` · Slot ${item.slot}`}
+              {` · ${item.meetSpot}`}
             </span>
           </CardItem>
           <CardItem translateZ="100" rotateX={20} rotateZ={-10} className="w-full mt-4">

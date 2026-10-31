@@ -22,7 +22,7 @@ export type FeaturedItem = {
   title: string
   category: string
   code: string
-  slot: string | null
+  meetSpot: string
 }
 
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -223,8 +223,8 @@ function Aurora() {
 /* ── floating 3D cards ─────────────────────────────────────────── */
 
 const SAMPLE: FeaturedItem[] = [
-  { id: "", title: "Casio FX-991EX calculator", category: "Calculator", code: "CS-1001", slot: "S1" },
-  { id: "", title: "White lab coat (size M)", category: "Lab coat", code: "CS-1002", slot: "S2" },
+  { id: "", title: "Casio FX-991EX calculator", category: "Calculator", code: "CS-1001", meetSpot: "Library entrance" },
+  { id: "", title: "White lab coat (size M)", category: "Lab coat", code: "CS-1002", meetSpot: "Academic block lobby" },
 ]
 
 function HeroCards({ featured }: { featured: FeaturedItem[] }) {
@@ -265,7 +265,7 @@ function HeroCards({ featured }: { featured: FeaturedItem[] }) {
         </Floating>
 
         <Floating className="bottom-[2%] left-[8%] w-[70%]" depth={90} tilt={-2} delay={0.7} reduce={reduce} float={5}>
-          <ReservedToast slot={items[0].slot} />
+          <ReservedToast place={items[0].meetSpot} />
         </Floating>
       </motion.div>
     </div>
@@ -326,7 +326,7 @@ function ItemCard({ item }: { item: FeaturedItem }) {
         <MiniQR seed={item.code} className="h-12 w-12" />
         <div className="text-xs leading-relaxed text-slate-500">
           <p className="font-mono font-semibold tracking-widest text-slate-800">{item.code}</p>
-          <p>{item.slot ? `Slot ${item.slot} · ready` : "Ready to hand over"}</p>
+          <p>{`Handover: ${item.meetSpot}`}</p>
         </div>
       </div>
     </div>
@@ -340,7 +340,7 @@ function ItemCard({ item }: { item: FeaturedItem }) {
   )
 }
 
-function ReservedToast({ slot }: { slot: string | null }) {
+function ReservedToast({ place }: { place: string }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-slate-950 p-3.5 pr-5 text-white shadow-2xl shadow-indigo-950/30">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-400">
@@ -350,7 +350,7 @@ function ReservedToast({ slot }: { slot: string | null }) {
         <p className="text-sm font-semibold">Reserved for 3 days</p>
         <p className="truncate text-xs text-slate-400">
           Pickup code <span className="font-mono tracking-[0.2em] text-white">4821</span>
-          {slot && ` · slot ${slot}`}
+          {` · ${place}`}
         </p>
       </div>
     </div>
@@ -409,17 +409,17 @@ const STEPS = [
   },
   {
     t: "Book it",
-    d: "Classmates see what's free right now and reserve it. They get a 4-digit pickup code.",
+    d: "Classmates see what's free right now and reserve it. Only they get a 4-digit pickup code, like a delivery OTP.",
     screen: <BookScreen />,
   },
   {
-    t: "Drop it",
-    d: "Leave it in a numbered slot with a condition photo. You never have to meet.",
+    t: "Meet & swap",
+    d: "Same hostel? At your room. Otherwise a busy spot like the library. You type their code, they get the item.",
     screen: <DropScreen />,
   },
   {
     t: "Get it back",
-    d: "It comes back with a second photo. Compare the two, close the loan, done.",
+    d: "They hand it back and type your return code. Two photos prove the condition. Done.",
     screen: <ReturnScreen />,
   },
 ]
@@ -587,7 +587,7 @@ function BookScreen() {
           <CalcIcon className="h-12 w-12" />
         </div>
         <p className="mt-3 font-semibold">Casio FX-991EX</p>
-        <p className="text-xs text-slate-500">Calculator · Slot S1</p>
+        <p className="text-xs text-slate-500">Calculator · Library entrance</p>
       </div>
       <AnimatePresence mode="wait">
         {done ? (
@@ -618,34 +618,39 @@ function BookScreen() {
 
 function DropScreen() {
   return (
-    <div className="flex h-full flex-col justify-center gap-5 px-5 py-6">
-      <ScreenTitle>Lending point · Hostel A</ScreenTitle>
-      <div className="grid grid-cols-3 gap-2.5 px-1">
-        {["S1", "S2", "S3", "S4", "S5", "S6"].map((s) => (
-          <div
-            key={s}
-            className={cn(
-              "relative grid aspect-square place-items-center rounded-xl text-xs font-semibold",
-              s === "S1"
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/40"
-                : "bg-white text-slate-400 ring-1 ring-slate-200"
-            )}
-          >
-            {s === "S1" && (
-              <span className="absolute -inset-1 rounded-[0.9rem] ring-2 ring-indigo-300 animate-pulse" />
-            )}
-            {s === "S1" ? <CalcIcon className="h-6 w-6" /> : s}
-          </div>
-        ))}
+    <div className="flex h-full flex-col justify-center gap-4 px-5 py-6">
+      <ScreenTitle>Meet at · Library entrance</ScreenTitle>
+      <div className="rounded-2xl bg-slate-950 p-4 text-center text-white">
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Borrower&apos;s pickup code</p>
+        <p className="mt-2 flex justify-center gap-1.5">
+          {"4821".split("").map((d, i) => (
+            <motion.span
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 + i * 0.12 }}
+              className="grid h-10 w-8 place-items-center rounded-lg bg-white/10 font-mono text-xl font-bold"
+            >
+              {d}
+            </motion.span>
+          ))}
+        </p>
       </div>
       <div className="flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-slate-200">
         <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-50 text-amber-600">
           <CameraIcon className="h-5 w-5" />
         </span>
-        <p className="text-xs leading-snug text-slate-600">
-          Dropped in <strong className="text-slate-900">S1</strong> with a condition photo
-        </p>
+        <p className="text-xs leading-snug text-slate-600">Lender takes a photo and types the code</p>
       </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.8 }}
+        className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200"
+      >
+        <CheckIcon className="h-5 w-5 text-emerald-600" />
+        Code matches · handed over
+      </motion.div>
     </div>
   )
 }
