@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CampusShare — borrow what you need, lend what you don't",
   description:
-    "A verified QR-based lending system for IIIT Dharwad. Share calculators, lab coats, drafters and books across campus instead of buying them.",
+    "A free lending app for IIIT Dharwad students. Share calculators, lab coats, drafters and books across campus instead of buying them.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "CampusShare", statusBarStyle: "default" },
 }

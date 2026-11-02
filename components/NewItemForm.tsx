@@ -157,7 +157,7 @@ export function NewItemForm({
         )}
 
         <Button type="submit" size="lg" disabled={pending} className="w-full">
-          {pending ? "Listing…" : forRequest ? `List it and lend to ${forRequest.who}` : "List it and print a tag"}
+          {pending ? "Listing…" : forRequest ? `List it and lend to ${forRequest.who}` : "List it"}
         </Button>
       </form>
     </Card>

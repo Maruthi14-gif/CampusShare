@@ -3,7 +3,6 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { itemQrDataUrl, baseUrl } from "@/lib/qr"
 import { findStockImage } from "@/lib/stockImage"
 import { photoSrc } from "@/lib/photo"
 import { formatDate, nowMs } from "@/lib/utils"
@@ -73,8 +72,7 @@ export default async function ItemPage({
   const heldForMe = heldActive && item.holdUserId === me
   const overdueDays = loan ? Math.floor((nowMs() - loan.dueAt.getTime()) / DAY) : 0
 
-  const [qr, stock, ownerStats, borrowerStats] = await Promise.all([
-    itemQrDataUrl(item.code, baseUrl()),
+  const [stock, ownerStats, borrowerStats] = await Promise.all([
     item.imageUrl ? null : findStockImage(item.title, item.category),
     session?.user ? trustStats(item.owner.id) : null,
     loan && isOwner ? trustStats(loan.borrower.id) : null,
@@ -97,7 +95,7 @@ export default async function ItemPage({
 
       {isNew && (
         <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
-          Listed. Print the tag below and stick it on the item.
+          Listed. Students can find it on Browse now.
           {loan && isOwner && ` It's reserved for ${borrowerFirst} — hand it over at ${loan.meetPlace}.`}
         </p>
       )}
@@ -344,17 +342,6 @@ export default async function ItemPage({
             )}
           </Card>
 
-          {/* printable tag */}
-          <Card className="p-6 text-center">
-            <h2 className="text-sm font-semibold text-slate-900">Printable tag</h2>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt={`QR code for ${item.code}`} className="mx-auto mt-4 h-44 w-44" />
-            <p className="mt-2 font-mono text-lg font-semibold tracking-widest">{item.code}</p>
-            <p className="mt-2 text-xs leading-relaxed text-slate-500">
-              Print at 3.5 × 2.5 cm, cover with clear tape, stick on the item. The code is printed in text too, so a
-              scuffed tag still works.
-            </p>
-          </Card>
         </div>
       </div>
     </div>

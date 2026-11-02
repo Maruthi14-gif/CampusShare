@@ -30,7 +30,7 @@ export default async function NewItemPage({ searchParams }: { searchParams: Prom
     <div className="mx-auto w-full max-w-2xl px-4 py-12">
       <h1 className="font-display text-4xl font-extrabold tracking-[-0.03em] text-ink">Lend an item</h1>
       <p className="mt-2 text-sm leading-relaxed text-slate-600">
-        Takes about a minute. You&apos;ll get a QR tag to print and stick on it.
+        Takes about a minute. Classmates can find and reserve it straight away.
       </p>
       <div className="mt-8">
         <NewItemForm

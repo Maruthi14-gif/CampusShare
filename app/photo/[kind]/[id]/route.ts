@@ -28,6 +28,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
       "Content-Type": photo.type,
       "Content-Length": String(photo.bytes.length),
       "Cache-Control": "public, max-age=31536000, immutable",
+      // Vercel's CDN keeps it too, so each photo version leaves the database once.
+      "CDN-Cache-Control": "public, max-age=31536000, immutable",
     },
   })
 }

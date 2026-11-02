@@ -20,7 +20,6 @@ const COLUMNS: { title: string; links: { href: string; label: string; external?:
     title: "Project",
     links: [
       { href: "https://github.com/Maruthi14-gif/CampusShare", label: "Source code", external: true },
-      { href: "/#numbers", label: "Built for ₹121" },
     ],
   },
 ]
@@ -39,7 +38,7 @@ export function Footer() {
             <span className="font-display text-lg font-semibold tracking-tight text-slate-900">CampusShare</span>
           </Link>
           <p className="mt-4 text-sm leading-relaxed text-slate-500">
-            Borrow what you need, lend what you don&apos;t. A QR-based lending system for students of IIIT Dharwad.
+            Borrow what you need, lend what you don&apos;t. Free to use and free to run, for students of IIIT Dharwad.
           </p>
           <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />

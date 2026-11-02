@@ -87,13 +87,15 @@ export async function borrowerStanding(userId: string): Promise<Standing> {
 
 /** "12 loans · 0 late" — shown next to a student's name. */
 export async function trustStats(userId: string) {
-  const done = await prisma.loan.findMany({
-    where: { borrowerId: userId, status: { in: ["VERIFIED", "PROBLEM", "LOST"] } },
-    select: { status: true, dueAt: true, returnedAt: true },
-  })
+  const [done, lent] = await Promise.all([
+    prisma.loan.findMany({
+      where: { borrowerId: userId, status: { in: ["VERIFIED", "PROBLEM", "LOST"] } },
+      select: { status: true, dueAt: true, returnedAt: true },
+    }),
+    prisma.loan.count({ where: { item: { ownerId: userId }, status: "VERIFIED" } }),
+  ])
   const late = done.filter((l) => l.returnedAt && l.returnedAt > l.dueAt).length
   const problems = done.filter((l) => l.status !== "VERIFIED").length
-  const lent = await prisma.loan.count({ where: { item: { ownerId: userId }, status: "VERIFIED" } })
   return { borrowed: done.length, late, problems, lent }
 }
 
@@ -133,14 +135,28 @@ export async function promoteWaitlist(itemId: string) {
  *  - reservations not handed over within 24h expire and free the item
  *  - waitlist holds that ran out pass to the next person
  */
+let lastHousekeeping = 0
+
 export async function runHousekeeping() {
+  // Pages call this on every view; once a minute is plenty and keeps pages fast.
+  // (HOUSEKEEPING_EVERY_MS=0 runs it every time, which the test suite uses.)
+  const every = Number(process.env.HOUSEKEEPING_EVERY_MS ?? 60_000)
+  if (Date.now() - lastHousekeeping < every) return
+  lastHousekeeping = Date.now()
   try {
     const cutoff = new Date(Date.now() - RULES.reserveHoldHours * HOUR)
-    const stale = await prisma.loan.findMany({
-      where: { status: "RESERVED", createdAt: { lt: cutoff } },
-      select: { id: true, itemId: true },
-      take: 25,
-    })
+    const [stale, lapsed] = await Promise.all([
+      prisma.loan.findMany({
+        where: { status: "RESERVED", createdAt: { lt: cutoff } },
+        select: { id: true, itemId: true },
+        take: 25,
+      }),
+      prisma.item.findMany({
+        where: { status: "AVAILABLE", holdUntil: { lt: new Date() } },
+        select: { id: true },
+        take: 25,
+      }),
+    ])
     for (const loan of stale) {
       const freed = await prisma.$transaction(async (tx) => {
         const moved = await tx.loan.updateMany({
@@ -154,11 +170,6 @@ export async function runHousekeeping() {
       if (freed) await promoteWaitlist(loan.itemId)
     }
 
-    const lapsed = await prisma.item.findMany({
-      where: { status: "AVAILABLE", holdUntil: { lt: new Date() } },
-      select: { id: true },
-      take: 25,
-    })
     for (const item of lapsed) {
       await prisma.item.update({ where: { id: item.id }, data: { holdUserId: null, holdUntil: null } })
       await promoteWaitlist(item.id)
