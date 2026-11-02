@@ -10,7 +10,7 @@ import { Prisma } from "@prisma/client"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { CATEGORIES, CONDITIONS, isValidPhoto } from "@/lib/utils"
-import { MEET_SPOTS } from "@/lib/campus"
+import { MEET_SPOTS, RULES } from "@/lib/campus"
 import { promoteWaitlist } from "@/lib/rules"
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string; needsProfile?: boolean }
@@ -47,6 +47,7 @@ export async function createItem(input: {
   imageUrl?: string
   meetSpot?: string
   allowRoom?: boolean
+  loanDays?: number
 }): Promise<Result<{ itemId: string; code: string }>> {
   const session = await auth()
   if (!session?.user?.id) return { ok: false, error: "Please sign in first." }
@@ -75,6 +76,10 @@ export async function createItem(input: {
   if (allowRoom && !me.room)
     return { ok: false, error: "Add your room number on your profile to allow room handovers.", needsProfile: true }
 
+  const loanDays = input.loanDays ?? RULES.loanDays
+  if (!Number.isInteger(loanDays) || loanDays < 1 || loanDays > RULES.maxLoanDays)
+    return { ok: false, error: `Lend it for 1 to ${RULES.maxLoanDays} days.` }
+
   const description = input.description?.trim() || null
   if (description && description.length > MAX_DESCRIPTION)
     return { ok: false, error: `Keep the note under ${MAX_DESCRIPTION} characters.` }
@@ -96,6 +101,7 @@ export async function createItem(input: {
           imageUrl,
           meetSpot,
           allowRoom,
+          loanDays,
           ownerId: session.user.id,
           status: "AVAILABLE",
         },

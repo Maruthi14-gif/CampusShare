@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { createItem } from "@/app/actions/items"
 import { fulfilRequest } from "@/app/actions/loans"
 import { CATEGORIES } from "@/lib/utils"
-import { MEET_SPOTS } from "@/lib/campus"
+import { MEET_SPOTS, RULES } from "@/lib/campus"
 import { PhotoInput } from "@/components/PhotoInput"
 import { Button, Card, Field, Input, Select, Textarea } from "@/components/ui"
 
@@ -37,6 +37,7 @@ export function NewItemForm({
         condition: String(formData.get("condition") ?? "good"),
         meetSpot: String(formData.get("meetSpot") ?? ""),
         allowRoom: formData.get("allowRoom") === "on",
+        loanDays: Number(formData.get("loanDays")),
         imageUrl: photo || undefined,
       })
       if (!res.ok) {
@@ -98,6 +99,23 @@ export function NewItemForm({
             </Select>
           </Field>
         </div>
+
+        <Field label="Lend it for how many days?" hint={`At least 1 day, at most ${RULES.maxLoanDays}.`}>
+          <div className="flex items-center gap-2.5">
+            <Input
+              name="loanDays"
+              type="number"
+              inputMode="numeric"
+              required
+              min={1}
+              max={RULES.maxLoanDays}
+              step={1}
+              defaultValue={RULES.loanDays}
+              className="w-24"
+            />
+            <span className="text-sm text-slate-600">days</span>
+          </div>
+        </Field>
 
         <Field label="Anything the borrower should know?" hint="Optional. Missing cap, stiff button, needs batteries…">
           <Textarea name="description" rows={3} maxLength={300} />

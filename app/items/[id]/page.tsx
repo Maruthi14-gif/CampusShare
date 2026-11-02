@@ -146,6 +146,9 @@ export default async function ItemPage({
                 <Badge tone="blue">{item.category}</Badge>
                 <Badge>{item.code}</Badge>
                 <Badge tone={item.condition === "good" ? "green" : "amber"}>{item.condition}</Badge>
+                <Badge tone="blue">
+                  Lent for {item.loanDays} day{item.loanDays === 1 ? "" : "s"}
+                </Badge>
                 <Badge tone="amber">Handover: {item.meetSpot}</Badge>
                 {item.allowRoom && <Badge tone="green">Room pickup for same hostel</Badge>}
               </div>
@@ -226,7 +229,7 @@ export default async function ItemPage({
                   <WaitlistButton itemId={item.id} joined={waitPos >= 0} position={waitPos >= 0 ? waitPos + 1 : null} />
                 </div>
               ) : item.status === "AVAILABLE" ? (
-                <ReserveButton itemId={item.id} held={heldForMe} />
+                <ReserveButton itemId={item.id} days={item.loanDays} held={heldForMe} />
               ) : (
                 <WaitlistButton itemId={item.id} joined={waitPos >= 0} position={waitPos >= 0 ? waitPos + 1 : null} />
               )

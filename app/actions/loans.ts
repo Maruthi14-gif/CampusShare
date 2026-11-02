@@ -153,11 +153,9 @@ async function checkCode(
 async function reserveFor(
   itemId: string,
   borrowerId: string,
-  days: number
+  /** Shorter loan than the lender's limit (used when answering a request). */
+  wantDays?: number
 ): Promise<Result<{ loanId: string; pickupCode: string; dueAt: Date; meetPlace: string }>> {
-  if (!Number.isInteger(days) || days < 1 || days > RULES.maxLoanDays)
-    return { ok: false, error: `Loans can be 1 to ${RULES.maxLoanDays} days.` }
-
   const [item, borrower] = await Promise.all([
     prisma.item.findUnique({
       where: { id: itemId },
@@ -166,6 +164,7 @@ async function reserveFor(
         ownerId: true,
         meetSpot: true,
         allowRoom: true,
+        loanDays: true,
         holdUserId: true,
         holdUntil: true,
         owner: { select: { hostel: true, room: true, email: true } },
@@ -185,6 +184,10 @@ async function reserveFor(
 
   const standing = await borrowerStanding(borrowerId)
   if (standing.reason) return { ok: false, error: standing.reason }
+
+  // The lender decides how long; a request can only ask for less.
+  const maxDays = Math.min(Math.max(item.loanDays, 1), RULES.maxLoanDays)
+  const days = wantDays === undefined ? maxDays : Math.min(Math.max(Math.trunc(wantDays), 1), maxDays)
 
   let dueAt = new Date(Date.now() + days * DAY)
   const end = semesterEnd()
@@ -240,10 +243,10 @@ async function reserveFor(
   }
 }
 
-export async function reserveItem(itemId: string, days: number = RULES.loanDays) {
+export async function reserveItem(itemId: string) {
   const session = await auth()
   if (!session?.user?.id) return { ok: false as const, error: "Please sign in first." }
-  return reserveFor(itemId, session.user.id, days)
+  return reserveFor(itemId, session.user.id)
 }
 
 // ═══════════════════════════════════════════════════════════════

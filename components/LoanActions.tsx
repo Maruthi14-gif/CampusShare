@@ -108,7 +108,7 @@ function CodeInput({ value, onChange, label }: { value: string; onChange: (v: st
 
 /* ── Borrower: reserve ─────────────────────────────────── */
 
-export function ReserveButton({ itemId, held }: { itemId: string; held?: boolean }) {
+export function ReserveButton({ itemId, days, held }: { itemId: string; days: number; held?: boolean }) {
   const { pending, error, needsProfile, run } = useAction()
   return (
     <div className="space-y-3">
@@ -118,7 +118,7 @@ export function ReserveButton({ itemId, held }: { itemId: string; held?: boolean
         </p>
       )}
       <Button size="lg" className="w-full" disabled={pending} onClick={() => run(() => reserveItem(itemId))}>
-        {pending ? "Reserving…" : "Reserve for 3 days"}
+        {pending ? "Reserving…" : `Reserve for ${days} day${days === 1 ? "" : "s"}`}
       </Button>
       <Msg error={error} note={null} profileNext={needsProfile ? `/items/${itemId}` : undefined} />
     </div>

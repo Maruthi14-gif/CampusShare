@@ -95,6 +95,9 @@ model Item {
   meetSpot  String  @default("Library entrance")
   allowRoom Boolean @default(false)
 
+  // How many days the lender lends it for (1 to RULES.maxLoanDays).
+  loanDays Int @default(3)
+
   // Waitlist hold: when the item comes back, the next person in line gets
   // it to themselves until holdUntil.
   holdUserId String?
