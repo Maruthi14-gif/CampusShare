@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { LogoMark } from "@/components/LogoMark"
 
 const COLUMNS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
   {
@@ -33,9 +34,7 @@ export function Footer() {
       <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-4 pb-10 pt-16 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-12">
         <div className="col-span-2 max-w-xs md:col-span-1">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-600 text-[13px] font-bold text-white">
-              CS
-            </span>
+            <LogoMark className="h-9 w-9" />
             <span className="font-display text-lg font-semibold tracking-tight text-slate-900">CampusShare</span>
           </Link>
           <p className="mt-4 text-sm leading-relaxed text-slate-500">

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { LogoMark } from "@/components/LogoMark"
 
 export type ScreenItem = {
   id: string
@@ -77,9 +78,7 @@ export function MacBookScroll({ items }: { items: ScreenItem[] }) {
             <div className="aspect-[16/10.4] overflow-hidden rounded-[0.65rem] bg-ink">
               <div className="h-full bg-paper text-ink">
                 <div className="flex items-center gap-2.5 border-b border-slate-200 bg-white px-3 py-2 text-[clamp(8px,1.1vw,12px)]">
-                  <span className="grid h-[1.9em] w-[1.9em] place-items-center rounded-md bg-indigo-600 font-display text-[0.8em] font-bold text-white">
-                    CS
-                  </span>
+                  <LogoMark className="h-[1.9em] w-[1.9em]" />
                   <b className="font-display">CampusShare</b>
                   <span className="text-slate-500">Browse</span>
                   <span className="text-slate-500">Requests</span>

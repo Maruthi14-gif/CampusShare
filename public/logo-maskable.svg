@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="cs-shared-m"><rect x="27.2" y="27.2" width="20.8" height="20.8" rx="5.6"/></clipPath>
+  </defs>
+  <rect width="64" height="64" fill="#12142B"/>
+  <rect x="16" y="16" width="20.8" height="20.8" rx="5.6" fill="#FFFFFF"/>
+  <rect x="27.2" y="27.2" width="20.8" height="20.8" rx="5.6" fill="#3A3ED6"/>
+  <rect x="16" y="16" width="20.8" height="20.8" rx="5.6" fill="#CF3428" clip-path="url(#cs-shared-m)"/>
+</svg>

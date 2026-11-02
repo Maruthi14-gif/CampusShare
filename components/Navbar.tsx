@@ -12,6 +12,7 @@ import {
   useScroll,
 } from "motion/react"
 import { cn } from "@/lib/utils"
+import { LogoMark } from "@/components/LogoMark"
 
 export type NavUser = {
   name: string | null
@@ -172,9 +173,7 @@ export function Navbar({ user }: { user: NavUser | null }) {
 function Logo() {
   return (
     <Link href="/" className="group flex items-center gap-2.5 rounded-xl pr-2 font-semibold tracking-tight">
-      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-indigo-600 text-[13px] font-bold text-white">
-        <span className="relative transition-transform duration-300 group-hover:scale-110">CS</span>
-      </span>
+      <LogoMark className="h-9 w-9 transition-transform duration-300 group-hover:-rotate-6" />
       <span className="font-display text-[17px] text-slate-900">CampusShare</span>
     </Link>
   )
