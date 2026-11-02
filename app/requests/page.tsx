@@ -5,6 +5,8 @@ import { runHousekeeping } from "@/lib/rules"
 import { appUrl } from "@/lib/notify"
 import { Badge, Card, Empty } from "@/components/ui"
 import { RequestActions, RequestForm } from "@/components/RequestsUI"
+import { LevelBadge } from "@/components/Karma"
+import { karmaFor } from "@/lib/karma"
 
 export const dynamic = "force-dynamic"
 
@@ -30,6 +32,10 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
       : [],
   ])
 
+  // Requester levels, so lenders can see who is reliable (one lookup per student).
+  const requesterIds = [...new Set(requests.map((r) => r.userId))]
+  const levels = new Map(await Promise.all(requesterIds.map(async (id) => [id, (await karmaFor(id)).level] as const)))
+
   // Today in India, for the date picker's minimum.
   const now = nowMs()
   const today = new Date(now + 5.5 * 3_600_000).toISOString().slice(0, 10)
@@ -52,7 +58,12 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
                 <Card key={r.id} className="space-y-3 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-slate-900">{r.title}</p>
+                      <p className="font-semibold text-slate-900">
+                        {r.title}
+                        {levels.get(r.userId) && levels.get(r.userId) !== "Newcomer" && (
+                          <LevelBadge level={levels.get(r.userId)!} className="ml-2 align-middle" />
+                        )}
+                      </p>
                       <p className="text-xs text-slate-500">
                         {mine ? "Your request" : who} · {r.category} · needed by {formatDate(r.neededBy)}
                       </p>

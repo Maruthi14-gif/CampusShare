@@ -56,6 +56,7 @@ export function Navbar({ user }: { user: NavUser | null }) {
   const links: NavLink[] = [
     { href: "/items", label: "Browse", match: (p) => p === "/items" || (p.startsWith("/items/") && p !== "/items/new") },
     { href: "/requests", label: "Requests", match: (p) => p.startsWith("/requests") },
+    { href: "/leaderboard", label: "Leaderboard", match: (p) => p.startsWith("/leaderboard") },
     ...(user
       ? [{ href: "/dashboard", label: "My stuff", match: (p: string) => p.startsWith("/dashboard") }]
       : [{ href: "/#how", label: "How it works", match: () => false }]),

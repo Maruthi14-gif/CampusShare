@@ -7,6 +7,8 @@ import { borrowerStanding, runHousekeeping } from "@/lib/rules"
 import { CATALOGUE_SELECT, toCatalogue } from "@/lib/catalogue"
 import { Badge, Card, Empty, StatusBadge } from "@/components/ui"
 import { CatalogueCard } from "@/components/CatalogueCard"
+import { LevelBadge } from "@/components/Karma"
+import { LEVELS, karmaFor } from "@/lib/karma"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +20,7 @@ export default async function DashboardPage() {
   const me = session.user.id
   await runHousekeeping()
 
-  const [profile, standing, myItems, myBorrows, onMyItems, heldForMe, myRequests] = await Promise.all([
+  const [profile, standing, myItems, myBorrows, onMyItems, heldForMe, myRequests, karma, everBorrowed] = await Promise.all([
     prisma.user.findUnique({ where: { id: me }, select: { hostel: true } }),
     borrowerStanding(me),
     prisma.item.findMany({ where: { ownerId: me }, select: CATALOGUE_SELECT, orderBy: { createdAt: "desc" } }),
@@ -41,7 +43,11 @@ export default async function DashboardPage() {
       where: { userId: me, status: "OPEN", neededBy: { gte: new Date() } },
       orderBy: { neededBy: "asc" },
     }),
+    karmaFor(me),
+    prisma.loan.count({ where: { borrowerId: me } }),
   ])
+  const floor = LEVELS.find((l) => l.name === karma.level)!.min
+  const pct = karma.next ? Math.round(((karma.points - floor) / (karma.next.at - floor)) * 100) : 100
 
   const myCards = await toCatalogue(myItems)
 
@@ -84,6 +90,40 @@ export default async function DashboardPage() {
         </Banner>
       )}
       {standing.reason && <Banner tone={standing.blockedUntil ? "red" : "amber"}>{standing.reason}</Banner>}
+
+      {/* karma at a glance */}
+      <Link
+        href="/profile"
+        className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300"
+      >
+        <span className="font-display text-3xl font-extrabold leading-none tracking-[-0.03em] text-ink">
+          {karma.points}
+          <span className="ml-1.5 text-sm font-semibold tracking-normal text-slate-500">points</span>
+        </span>
+        <LevelBadge level={karma.level} />
+        <span className="flex min-w-[10rem] flex-1 items-center gap-3">
+          <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+            <span className="block h-full rounded-full bg-indigo-600" style={{ width: `${Math.max(4, pct)}%` }} />
+          </span>
+          <span className="whitespace-nowrap text-xs text-slate-600">
+            {karma.next ? `${karma.next.at - karma.points} to ${karma.next.name}` : "Top level"}
+          </span>
+        </span>
+        <span className="text-sm font-semibold text-indigo-600">Perks →</span>
+      </Link>
+
+      {/* give one, get one */}
+      {myItems.length === 0 && everBorrowed > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-indigo-50 p-4 ring-1 ring-indigo-100">
+          <p className="text-sm text-indigo-950">
+            <strong className="font-semibold">Give one, get one.</strong> You&apos;ve borrowed from classmates. List one
+            thing you own and earn 10 points every time it comes back.
+          </p>
+          <Link href="/items/new" className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+            List an item
+          </Link>
+        </div>
+      )}
 
       {heldForMe.length > 0 && (
         <Section title="Held for you">

@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/prisma"
 import { RULES } from "@/lib/campus"
 import { appUrl, sendEmail } from "@/lib/notify"
+import { PERK_AT, pointsFor } from "@/lib/karma"
 
 const DAY = 86_400_000
 const HOUR = 3_600_000
@@ -53,19 +54,23 @@ export type Standing = {
   overdue: number
   strikeCount: number
   blockedUntil: Date | null
+  /** Items this student may hold at once: 3 with the karma perk, else 2. */
+  limit: number
   /** Why this student can't borrow right now, or null if they can. */
   reason: string | null
 }
 
 /** Can this student borrow right now? Used before reserving and on the dashboard. */
 export async function borrowerStanding(userId: string): Promise<Standing> {
-  const [activeLoans, strikeDates] = await Promise.all([
+  const [activeLoans, strikeDates, points] = await Promise.all([
     prisma.loan.findMany({
       where: { borrowerId: userId, status: { in: ["RESERVED", "ISSUED", "COLLECTED"] } },
       select: { dueAt: true, status: true },
     }),
     strikes(userId),
+    pointsFor(userId),
   ])
+  const limit = points >= PERK_AT ? RULES.maxActiveBorrows + 1 : RULES.maxActiveBorrows
   const now = Date.now()
   const overdue = activeLoans.filter((l) => l.status !== "RESERVED" && l.dueAt.getTime() < now).length
 
@@ -79,10 +84,10 @@ export async function borrowerStanding(userId: string): Promise<Standing> {
   if (blockedUntil)
     reason = `Borrowing is paused until ${blockedUntil.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} because of ${strikeDates.length} late or problem returns.`
   else if (overdue > 0) reason = "Return your overdue item first."
-  else if (activeLoans.length >= RULES.maxActiveBorrows)
-    reason = `You can hold ${RULES.maxActiveBorrows} items at a time. Return one first.`
+  else if (activeLoans.length >= limit)
+    reason = `You can hold ${limit} items at a time. Return one first.`
 
-  return { active: activeLoans.length, overdue, strikeCount: strikeDates.length, blockedUntil, reason }
+  return { active: activeLoans.length, overdue, strikeCount: strikeDates.length, blockedUntil, limit, reason }
 }
 
 /** "12 loans · 0 late" — shown next to a student's name. */
@@ -104,11 +109,16 @@ export async function trustStats(userId: string) {
  * reserve it for RULES.waitlistHoldHours. With nobody waiting, clear any hold.
  */
 export async function promoteWaitlist(itemId: string) {
-  const next = await prisma.waitlistEntry.findFirst({
+  const queue = await prisma.waitlistEntry.findMany({
     where: { itemId },
     orderBy: { createdAt: "asc" },
     include: { user: { select: { email: true } }, item: { select: { title: true } } },
   })
+  // Karma perk: students with PERK_AT (50) or more points are first in line; otherwise first come, first served.
+  const points = await Promise.all(queue.map((e) => pointsFor(e.userId)))
+  const order = queue.map((e, i) => ({ e, i, perk: points[i] >= PERK_AT }))
+  order.sort((a, b) => Number(b.perk) - Number(a.perk) || a.i - b.i)
+  const next = order[0]?.e ?? null
   if (!next) {
     await prisma.item.updateMany({
       where: { id: itemId, holdUserId: { not: null } },

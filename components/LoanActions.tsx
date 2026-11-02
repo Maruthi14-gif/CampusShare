@@ -159,6 +159,7 @@ export function ReturnForm({ loanId, ownerName }: { loanId: string; ownerName: s
   const { pending, error, note, run } = useAction({ refreshOnError: true })
   const [photo, setPhoto] = useState("")
   const [code, setCode] = useState("")
+  const [thanks, setThanks] = useState("")
 
   return (
     <div className="space-y-4">
@@ -169,10 +170,23 @@ export function ReturnForm({ loanId, ownerName }: { loanId: string; ownerName: s
       </ol>
       <PhotoInput name="returnPhoto" label="Condition photo on return" value={photo} onChange={setPhoto} required />
       <CodeInput value={code} onChange={setCode} label={`${ownerName}'s return code`} />
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium text-slate-700">
+          Say thanks to {ownerName} <span className="font-normal text-slate-500">(optional)</span>
+        </span>
+        <input
+          value={thanks}
+          onChange={(e) => setThanks(e.target.value.slice(0, 140))}
+          maxLength={140}
+          placeholder="Saved me in the maths exam!"
+          className="w-full rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm ring-1 ring-inset ring-slate-300 outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500"
+        />
+        <span className="block text-xs text-slate-500">It shows on {ownerName}&apos;s profile.</span>
+      </label>
       <Button
         className="w-full"
         disabled={pending || !photo || code.length !== 4}
-        onClick={() => run(() => markReturned(loanId, code, photo), () => setCode(""))}
+        onClick={() => run(() => markReturned(loanId, code, photo, undefined, thanks), () => setCode(""))}
       >
         {pending ? "Checking…" : "Confirm return"}
       </Button>

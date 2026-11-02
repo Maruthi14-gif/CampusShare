@@ -202,8 +202,8 @@ async function reserveFor(
       const active = await tx.loan.count({
         where: { borrowerId, status: { in: ["RESERVED", "ISSUED", "COLLECTED"] } },
       })
-      if (active >= RULES.maxActiveBorrows)
-        throw new Refused(`You can hold ${RULES.maxActiveBorrows} items at a time. Return one first.`)
+      if (active >= standing.limit)
+        throw new Refused(`You can hold ${standing.limit} items at a time. Return one first.`)
 
       // THE RACE CONDITION FIX: the "is it free?" check is inside the write.
       // Two students tapping Reserve at the same instant can't both win.
@@ -336,7 +336,14 @@ export async function markIssued(loanId: string, code: string, photoUrl: string,
 //  3. RETURN  —  borrower types the lender's return code
 // ═══════════════════════════════════════════════════════════════
 
-export async function markReturned(loanId: string, code: string, photoUrl: string, notes?: string): Promise<Result> {
+export async function markReturned(
+  loanId: string,
+  code: string,
+  photoUrl: string,
+  notes?: string,
+  /** Optional one-line thank-you to the lender, shown on their profile. */
+  thanks?: string
+): Promise<Result> {
   const session = await auth()
   if (!session?.user?.id) return { ok: false, error: "Please sign in first." }
 
@@ -357,7 +364,13 @@ export async function markReturned(loanId: string, code: string, photoUrl: strin
     loanId,
     itemId: loan.itemId,
     from: ["ISSUED", "COLLECTED"],
-    data: { status: "RETURNED", returnedAt: new Date(), extendDays: null, returnRequestedAt: null },
+    data: {
+      status: "RETURNED",
+      returnedAt: new Date(),
+      extendDays: null,
+      returnRequestedAt: null,
+      thanksNote: String(thanks ?? "").trim().slice(0, 140) || null,
+    },
     // Not AVAILABLE yet — the owner still compares the two photos.
     itemStatus: "AWAITING_CHECK",
     log: { phase: "RETURN", photoUrl, notes },

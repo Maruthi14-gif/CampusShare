@@ -8,6 +8,8 @@ import { photoSrc } from "@/lib/photo"
 import { formatDate, nowMs } from "@/lib/utils"
 import { RULES, whatsappLink } from "@/lib/campus"
 import { runHousekeeping, trustStats } from "@/lib/rules"
+import { karmaFor } from "@/lib/karma"
+import { LevelBadge } from "@/components/Karma"
 import { Badge, Card, StatusBadge } from "@/components/ui"
 import {
   CancelButton,
@@ -74,7 +76,7 @@ export default async function ItemPage({
 
   const [stock, ownerStats, borrowerStats] = await Promise.all([
     item.imageUrl ? null : findStockImage(item.title, item.category),
-    session?.user ? trustStats(item.owner.id) : null,
+    session?.user ? karmaFor(item.owner.id) : null,
     loan && isOwner ? trustStats(loan.borrower.id) : null,
   ])
 
@@ -153,6 +155,7 @@ export default async function ItemPage({
                 {/* Roll numbers are for campus eyes only, not the open web */}
                 {session?.user && item.owner.rollNo && ` · ${item.owner.rollNo}`}
                 {ownerStats && ownerStats.lent > 0 && ` · lent ${ownerStats.lent} time${ownerStats.lent === 1 ? "" : "s"}`}
+                {ownerStats && ownerStats.level !== "Newcomer" && <LevelBadge level={ownerStats.level} className="ml-2 align-middle" />}
               </p>
             </div>
           </Card>

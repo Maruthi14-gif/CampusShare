@@ -130,6 +130,7 @@ model Loan {
   extendDays        Int? // borrower asked for this many extra days; owner decides
   returnRequestedAt DateTime? // owner asked for it back early
   problemNote       String? // owner's note when reporting damage
+  thanksNote        String? // borrower's one-line thank-you, shown on the lender's profile
 
   dueAt       DateTime
   issuedAt    DateTime?
