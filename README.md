@@ -1,118 +1,247 @@
-# CampusShare
+<p align="center">
+  <img src="public/logo.svg" width="88" alt="CampusShare logo">
+</p>
 
-**Borrow what you need, lend what you don't.** A verified QR-based lending
-system for IIIT Dharwad — built for ₹121 as a Frugal Innovation course project.
+<h1 align="center">CampusShare</h1>
 
-Live: https://campusshare-black.vercel.app/
+<p align="center">
+  <b>Borrow what you need. Lend what you don't.</b><br>
+  A free lending app for IIIT Dharwad students. Frugal Innovation course project.<br>
+  <a href="https://campusshare-black.vercel.app/">campusshare-black.vercel.app</a>
+</p>
+
+<p align="center">
+  <img src="docs/home.png" width="720" alt="CampusShare home page">
+</p>
 
 ---
 
 ## The problem
 
-Students buy items they use three or four times a semester — a scientific
+Students buy things they use three or four times a semester: a scientific
 calculator for one exam, a lab coat for one lab block, a drafter for Engineering
-Graphics. Each costs ₹300–₹2,000 and then sits in a cupboard.
+Graphics. Each costs ₹300 to ₹2,000, then sits in a cupboard.
 
-Borrowing today happens by posting in a WhatsApp group. Requests get buried
-within minutes, there's no way to see what exists or whether it's free, no record
-of who took what, and no reminder to return it. Lenders stop offering because
-things come back late or damaged with nobody accountable.
+Borrowing today means posting in a WhatsApp group. Requests get buried within
+minutes, nobody knows what exists or whether it's free, there's no record of who
+took what, and no reminder to give it back. So lenders stop lending.
 
-## How it works
+## How a loan works
 
-1. Each student signs in with their college Google account and sets their hostel once
-2. Lender lists an item and picks a public handover spot (and, optionally, their room for same-hostel borrowers)
-3. Borrower reserves it and gets a 4-digit **pickup code** — like a food-delivery OTP, only they can see it
-4. They meet: same hostel → the lender's room; different hostels → the public spot
-5. Lender takes a condition photo and types the borrower's code → the item is now with the borrower
-6. At return, the lender reads out their own **return code**; the borrower types it with a second photo
-7. Lender compares the two photos and closes the loan — or reports a problem
+1. **Reserve.** The borrower taps Reserve and gets a 4-digit **pickup code**. Only they can see it.
+2. **Meet.** Same hostel: at the lender's room. Different hostels: a busy public spot the lender chose.
+3. **Hand over.** The lender takes a condition photo and types the borrower's code. Now it's borrowed.
+4. **Return.** The borrower takes a second photo and types the lender's **return code**. The lender checks and closes the loan.
 
-Nobody can be handed an item, or claim a return, without the other person's code.
-Can't find something? Post a **request**; anyone who has one can lend it in one tap.
+It works like a food-delivery OTP. Nobody can be handed an item, or claim it came
+back, without the other person's code.
 
-## Architecture
+<p align="center">
+  <img src="docs/pickup-code.png" width="300" alt="A borrower's screen showing the pickup code and where to meet">
+</p>
 
-| Layer | Choice | Why |
+### Where students meet
+
+Each student sets their hostel once on their profile. The app then picks the place:
+
+| Lender and borrower | Meeting place |
+|---|---|
+| Same hostel, lender allows room pickup | The lender's room, shown only to that borrower |
+| Different hostels | Library entrance, Academic e-block entrance, KRC or M-Block, or Main gate security desk |
+
+Hostels and meeting spots are set in [`lib/campus.ts`](lib/campus.ts).
+
+## Features
+
+**Finding things**
+- Browse with live search, category chips with counts, and a Free now / Everything switch
+- Library-card style cards with an ink stamp: FREE, RESERVED, OUT · back THU, PAUSED
+- Items without a photo get a credited stock photo from Wikimedia Commons, labelled "Stock photo"
+- Can't find it? Post a **request**. Anyone who has one can lend it in one tap, and requests can be shared on WhatsApp
+
+<p align="center">
+  <img src="docs/browse.png" width="720" alt="Browse page with search, category chips and item cards">
+</p>
+
+**Trust without a deposit**
+
+| Rule | Why |
+|---|---|
+| Only `@iiitdwd.ac.in` Google accounts can sign in | Every loan is tied to a real roll number |
+| Two one-time codes, pickup and return | Neither side can fake a handover or a return |
+| Two condition photos, at handover and at return | Damage is visible, not arguable |
+| At most 2 items at a time | Nobody hoards everything before exams |
+| Two late or problem returns pause borrowing for 14 days | Late returns have a cost |
+| A reservation not handed over in 24 hours cancels itself | No-shows don't block items |
+| 5 wrong codes issue a fresh code | Codes can't be guessed |
+| Busy item? Join the waitlist; it's held for the next person for 12 hours | Fair queue when demand is high |
+
+**Why students lend: karma, perks and pride**
+
+| Action | Points |
+|---|---|
+| Lend an item and get it back fine | +10 |
+| Each day it was out (up to 14) | +2 |
+| Lend it in answer to a request | +5 |
+| Return something on time | +3 |
+| Return late, damaged or lose it | −10 |
+
+- At **50 points** a student can hold 3 items instead of 2, and is first in line on waitlists
+- Levels: Newcomer, Helper (25), Trusted lender (50), Campus champion (100), shown as badges
+- A monthly **leaderboard**: B-Block against G-Block, plus the top lenders. Only lending is ranked, so nobody is shamed for borrowing
+- Borrowers can leave a one-line **thank-you note** that shows on the lender's profile
+- Points are worked out from real loan history every time, never stored, so nobody can edit their own score
+
+<p align="center">
+  <img src="docs/leaderboard.png" width="620" alt="Leaderboard with hostel battle and top lenders (test data)">
+</p>
+
+## It costs nothing to run
+
+| What it needs | Service | Cost |
 |---|---|---|
-| Framework | Next.js 16 (App Router) | Server Actions mean no separate API server to host or pay for |
-| Database | PostgreSQL (Neon) | Relational data with real constraints; free tier |
-| ORM | Prisma | Typed queries, and migrations that are reviewable in git |
-| Auth | Auth.js v5 + Google | Institute email *is* the identity — see below |
-| Styling | Tailwind CSS v4 | No CSS files to maintain |
-| Motion | Motion | Landing page only — the app itself stays light |
-| Hosting | Vercel | Free, HTTPS by default (which the camera needs) |
+| Website hosting | Vercel free plan | ₹0 |
+| Database | Neon Postgres free plan | ₹0 |
+| Sign-in | Google, college accounts | ₹0 |
+| Stock photos | Wikimedia Commons, credited | ₹0 |
+| Printing and hardware | Not needed | ₹0 |
 
-## The interesting problem: a reservation race
+The first design used printed QR stickers and a lending box, about ₹121. Both were
+dropped: students meet and swap a code instead, which is cheaper and safer.
 
-Two students tap **Reserve** on the same calculator at the same moment. The
-obvious code is wrong:
+## Interesting problems we solved
+
+### Two students tap Reserve at the same moment
+
+The obvious code is wrong:
 
 ```ts
 const item = await db.item.findUnique({ where: { id } })
-if (item.status === "AVAILABLE") {     // both requests pass this check
-  await db.item.update({ ... })        // both succeed — item promised twice
+if (item.status === "AVAILABLE") {   // both requests pass this check
+  await db.item.update({ ... })      // both succeed: item promised twice
 }
 ```
 
-Between the read and the write, the second request slips through. The fix is to
-move the condition *inside* the write, so the database arbitrates:
+The fix moves the check *inside* the write, so the database decides:
 
 ```ts
 const claimed = await db.item.updateMany({
   where: { id, status: "AVAILABLE" },
-  data:  { status: "RESERVED" },
+  data: { status: "RESERVED" },
 })
 if (claimed.count === 0) throw new Error("Someone just reserved this item")
 ```
 
-One SQL statement, so Postgres serialises it. Exactly one caller gets
-`count === 1`. Verified by opening two browser profiles and clicking
-simultaneously.
+Every later step works the same way. Handover, return, cancel and the owner's
+check all go through one `transition()` helper in
+[`app/actions/loans.ts`](app/actions/loans.ts), so two taps can never overwrite
+each other. The full list of bugs found and fixed is in [`BUGS.md`](BUGS.md).
 
-## Trust without money
+### Pages took 1 to 3 seconds
 
-Students can't take deposits from each other, so accountability has to come from
-somewhere else. Two mechanisms:
+The app ran in Washington DC while the database was in Singapore, so every query
+crossed the Pacific. Running the app in Singapore (`vercel.json`) brought server
+response times down to about a quarter of a second:
 
-- **Identity** — sign-in is restricted to `@iiitdwd.ac.in`, so every action in
-  the system is attached to a real roll number
-- **Evidence** — a condition photo is mandatory at handover *and* at return,
-  stored as a pair, so damage is attributable instead of arguable
+| Page | Before | After |
+|---|---|---|
+| Home | 1.2–2.6 s | 0.22 s |
+| Browse | 1.7–1.9 s | 0.26 s |
+| Item page | 2.3–3.1 s | 0.24 s |
 
-No deposit, no lock, no sensor.
+Photos are also served as cached image files instead of being pasted into pages,
+which cut the Browse page from 1,390 KB to about 410 KB.
 
-## Frugal constraints as engineering constraints
+## Tech stack
 
-| | Cost |
+| Layer | Choice | Why |
+|---|---|---|
+| Framework | Next.js 16 (App Router) | Server Actions mean no separate API server to host or pay for |
+| Database | PostgreSQL on Neon | Real constraints and atomic updates; free plan |
+| ORM | Prisma | Typed queries |
+| Sign-in | Auth.js v5 with Google | The college email *is* the identity |
+| Styling | Tailwind CSS v4 | One design system in `app/globals.css` |
+| Motion | Motion, Lenis, GSAP | Smooth scrolling everywhere; GSAP loads on the landing page only |
+| Images | Next.js Image | Small WebP/AVIF files from our own domain |
+| Hosting | Vercel, Singapore region | Next to the database |
+
+## Project structure
+
+```
+app/
+  actions/        Server Actions: loans (the state machine), items, requests, profile
+  items/          Browse, item page, lend form
+  dashboard/      What's waiting for you, what you borrow and lend
+  requests/       The requests board
+  leaderboard/    Hostel battle and top lenders
+  profile/        Hostel, room, phone, karma and thank-you notes
+  photo/          Serves stored photos as cached image files
+  api/cron/       Daily reminder job
+components/       UI: navbar, footer, landing sections, cards, loan forms
+lib/
+  campus.ts       Hostels, meeting spots and loan rules (edit these)
+  karma.ts        Points, levels, perks and the leaderboard
+  rules.ts        Borrowing limits, strikes, waitlist, housekeeping
+  stockImage.ts   Finds stand-in photos on Wikimedia Commons
+prisma/schema.prisma
+```
+
+## Running it locally
+
+You need Node.js 20+, a free [Neon](https://neon.tech) database and a Google
+OAuth client.
+
+1. Create `.env` in the project folder:
+
+   ```
+   DATABASE_URL=postgres://...        # from Neon
+   AUTH_SECRET=...                    # any long random string
+   AUTH_GOOGLE_ID=...                 # Google Cloud console, OAuth client
+   AUTH_GOOGLE_SECRET=...
+   ALLOWED_EMAIL_DOMAIN=iiitdwd.ac.in
+   ```
+
+   In the Google OAuth client, add the redirect URL
+   `http://localhost:3000/api/auth/callback/google`.
+
+2. Install, create the tables, add demo items and start:
+
+   ```
+   npm install
+   npx prisma db push
+   npm run db:seed
+   npm run dev
+   ```
+
+3. Open http://localhost:3000 and sign in with a college account.
+
+**Optional settings** (also add these in Vercel → Settings → Environment Variables):
+
+| Variable | What it does |
 |---|---|
-| Total bill of materials | **₹121** of a ₹150 ceiling |
-| Printed QR tag | ₹0.60 each |
-| An RFID tag doing the same job | ₹30+ |
-| Software and hosting | ₹0 — free tiers throughout |
+| `SEMESTER_END` | `YYYY-MM-DD`; no loan can run past this day |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Turn on email alerts and "due tomorrow" reminders |
+| `CRON_SECRET` | Protects the daily reminder job |
+| `NEXT_PUBLIC_APP_URL` | The site's public address, used in links and emails |
 
-Two decisions came directly from the budget:
+**Deploying a change to the database schema:** run `npx prisma db push` against
+the live database *before* pushing the code, or the new pages will error.
 
-- **QR instead of RFID.** A paper sticker read by a camera every student already
-  owns, instead of tags plus a reader.
-- **No scanner library.** The phone's own camera opens the QR's URL. That removed
-  a dependency, a permission prompt, and about 200 KB of JavaScript.
+## Testing
 
-## Running locally
+Every scenario was run end to end in a real browser with Playwright, using fake
+students on a local copy of the database: reserving, both codes, wrong codes,
+extensions, early returns, problems, losses, the waitlist, auto-cancel, the borrow
+limit, strikes, requests, rewards and phone layouts. The manual checklist to run
+before a demo is in [`BUGS.md`](BUGS.md).
 
-See [START-HERE.md](./START-HERE.md).
+## Known trade-offs and next steps
 
-## What I'd build next
-
-- Push notifications before the due date (currently in-app only)
-- A dispute flow when the two condition photos disagree
-- Bulk import so departments can list their existing lab stock
-- Object storage for photos — they're base64 in Postgres right now, which is
-  fine at pilot scale and wrong beyond a few thousand items
-
-## Known trade-offs
-
-- Condition photos are compressed client-side to ~80 KB and stored as data URLs
-  in Postgres. Deliberate: it removed an entire third-party storage dependency
-  for the pilot. It does not scale and would be the first thing to change.
-- No automated tests. Three-day build; manual test checklist in `BUGS.md`.
+- **Free database sleeps.** Neon's free plan pauses after 5 minutes idle, so the
+  first visit after a quiet spell takes 1 to 2 seconds longer.
+- **Photos live in Postgres.** They're compressed to about 80 KB each and served
+  as cached files. Fine for a campus pilot; object storage is the next step at
+  thousands of items.
+- **Emails are off by default.** They need a Resend key.
+- **Next:** a pilot with real students in B-Block and G-Block, and a department
+  certificate for the top lenders each semester.
